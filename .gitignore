@@ -127,3 +127,30 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# IDEA默认忽略的文件
+/shelf/
+/workspace.xml
+# 基于编辑器的 HTTP 客户端请求
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+# Fleet 的配置文件
+.fleet
+
+# Visual Studio Code的设置文件夹
+.vscode
+
+# python缓存
+*.pyc
+
+# 项目特有配置
+data
