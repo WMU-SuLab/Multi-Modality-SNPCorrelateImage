@@ -13,7 +13,7 @@
         - 划分数据集是已经选择好了哪些数据来训练，划分出训练集、验证集和测试集
         - 图像数据预处理是对图像进行一些处理，并且从图像库中提取可使用的数据
         - 是否可使用是根据图像质量、有无对应标签和基因数据等来判断的
-- 使用`dataset.py`模块
+- 使用`divide_dataset.py`模块
     - 使用方法：`python divide_dataset.py label_data_path gene_data_dir_path image_data_dir_path`
     - 默认的可选参数相当于：`--train_ratio 7 --valid_ratio 3 --strategy train_valid`
         - 根据需要调整数据集的比例
@@ -24,11 +24,11 @@
 - 示例：
     - `python divide_dataset.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/label/ftd_myopia_left.csv /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/gene/students/ /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/image/students_qc/ftd_left/ --dataset_divide_dir /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/ --label_data_id_field_name 学籍号`
 
-## 加载数据集
+## 基因数据集归一化
 
-- 使用`dataloader.py`中的模块
-    - SNPImageDataset
-        - 注意更改label的ID和Value字段名称
+- 使用`count_gene_freq.py`获得当前划分数据集中训练集的频率
+- 示例
+    - `python count_gene_freq.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230426211048/train/gene`
 
 ## 模型训练
 
@@ -38,6 +38,11 @@
     - 本项目所有变量名称都符合这个原则，注意区分
 - 前提是使用`divide_dataset.py`模块划分好数据集
 - 使用`train.py`模块
+    - 输入模型名称
+    - 输入数据集路径
+    - 输入基因数据长度
+    - 输入基因频率文件路径
 - 示例
     - `python train.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230411103345/ 12275 --pretrain_image_feature_checkpoint_path /data/home/sunhj/Multi-Modality-SNPCorrelateImage/weights/convnext_tiny_1k_224_ema.pth`
     - `python train.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230411170537/ 12275 --epochs 100 --batch_size 64`
+    - `python train.py SNPImageNet /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230426211048 --snp_numbers 21213 --gene_freq_file_path /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230426211048/train/gene/freq.json --epochs 100 --batch_size 32` 

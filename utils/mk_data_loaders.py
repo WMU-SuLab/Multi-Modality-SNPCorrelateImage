@@ -48,12 +48,14 @@ def mk_data_loaders(
     return data_loaders
 
 
-def mk_myopia_gene_net_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
+def mk_myopia_gene_net_data_loaders(
+        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
+        drop_last: bool = False):
     return mk_data_loaders(
         SNPDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path']),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path']),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path']),
+        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], gene_freq_file_path,),
+        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], gene_freq_file_path,),
+        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], gene_freq_file_path,),
         (data_paths['test_gene_dir_path'],),
         batch_size=batch_size, drop_last=drop_last
     )
@@ -70,22 +72,24 @@ def mk_myopia_image_net_data_loaders(data_paths: dict, batch_size: int, drop_las
     )
 
 
-def mk_myopia_gene_image_net_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
+def mk_myopia_gene_image_net_data_loaders(
+        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
+        drop_last: bool = False):
     return mk_data_loaders(
         SNPImageDataset,
         (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], data_paths['train_image_dir_path'],
-         gene_image_transforms['train']),
+         gene_freq_file_path, gene_image_transforms['train']),
         (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], data_paths['valid_image_dir_path'],
-         gene_image_transforms['valid']),
+         gene_freq_file_path, gene_image_transforms['valid']),
         (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],
-         gene_image_transforms['test']),
+         gene_freq_file_path, gene_image_transforms['test']),
         (data_paths['test_gene_dir_path'], data_paths['test_image_dir_path']),
         batch_size=batch_size, drop_last=drop_last
     )
 
 
 mk_data_loaders_funcs = {
-    'GeneNet': mk_myopia_gene_net_data_loaders,
+    'SNPNet': mk_myopia_gene_net_data_loaders,
     'ImageNet': mk_myopia_image_net_data_loaders,
     'SNPImageNet': mk_myopia_gene_image_net_data_loaders
 }
@@ -124,12 +128,14 @@ def mk_train_multi_data_loaders(
     return data_loaders, samplers
 
 
-def mk_myopia_gene_net_train_multi_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
+def mk_myopia_gene_net_train_multi_data_loaders(
+        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
+        drop_last: bool = False):
     return mk_train_multi_data_loaders(
         SNPDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path']),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path']),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path']),
+        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], gene_freq_file_path,),
+        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], gene_freq_file_path,),
+        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], gene_freq_file_path,),
         (data_paths['test_gene_dir_path'],),
         batch_size=batch_size, drop_last=drop_last
     )
@@ -146,22 +152,24 @@ def mk_myopia_image_net_train_multi_data_loaders(data_paths: dict, batch_size: i
     )
 
 
-def mk_myopia_gene_image_net_train_multi_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
+def mk_myopia_gene_image_net_train_multi_data_loaders(
+        data_paths: dict, batch_size: int,
+        gene_freq_file_path: str = None, drop_last: bool = False):
     return mk_train_multi_data_loaders(
         ImageDataset,
         (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], data_paths['train_image_dir_path'],
-         gene_image_transforms['train']),
+         gene_freq_file_path, gene_image_transforms['train']),
         (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], data_paths['valid_image_dir_path'],
-         gene_image_transforms['valid']),
+         gene_freq_file_path, gene_image_transforms['valid']),
         (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],
-         gene_image_transforms['test']),
+         gene_freq_file_path, gene_image_transforms['test']),
         (data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],),
         batch_size=batch_size, drop_last=drop_last
     )
 
 
 mk_train_multi_data_loaders_funcs = {
-    'GeneNet': mk_myopia_gene_net_train_multi_data_loaders,
+    'SNPNet': mk_myopia_gene_net_train_multi_data_loaders,
     'ImageNet': mk_myopia_image_net_train_multi_data_loaders,
     'SNPImageNet': mk_myopia_gene_image_net_train_multi_data_loaders,
 }

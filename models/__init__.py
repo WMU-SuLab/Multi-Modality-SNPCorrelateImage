@@ -19,20 +19,20 @@ from torch import nn
 from .ConvNeXt.with_attention import convnext_tiny
 
 
-class GeneNet(nn.Module):
+class SNPNet(nn.Module):
     def __init__(self, snp_number: int):
-        super(GeneNet, self).__init__()
+        super(SNPNet, self).__init__()
         self.mlp = nn.Sequential(
             # 拼接 snp 和 image 特征
-            nn.Linear(snp_number, 1024),
-            nn.BatchNorm1d(1024),
+            nn.Linear(snp_number, 512),
+            nn.BatchNorm1d(512),
             nn.ReLU(),
             # nn.Dropout(0.2),
-            nn.Linear(1024, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(512, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             # nn.Dropout(0.2),
-            nn.Linear(256, 1),
+            nn.Linear(64, 1),
         )
 
     def forward(self, snps):
@@ -72,38 +72,52 @@ class ImageNet(nn.Module):
 class SNPImageNet(ImageNet):
     def __init__(self, snp_number: int):
         super(ImageNet, self).__init__()
-        # 这个模型已经把最后一层分类去掉了，留下的是特征层
-        self.image_features = convnext_tiny(1)
-
-        self.mlp = nn.Sequential(
-            # 拼接 snp 和 image 特征
-            nn.Linear(768 + snp_number, 768),
+        self.image_features = nn.Sequential(
+            convnext_tiny(1),
             nn.BatchNorm1d(768),
+        )
+        # self.gene_features = nn.Sequential(
+        #     nn.Linear(snp_number, 2048),
+        #     nn.BatchNorm1d(2048),
+        #     nn.ReLU(),
+        #     nn.Linear(2048, 768),
+        #     nn.BatchNorm1d(768),
+        # )
+        # self.feature_fusion = nn.Sequential(
+        #     # 拼接 snp 和 image 特征
+        #     nn.BatchNorm1d(768 * 2),
+        #     nn.Linear(768 * 2, 384),
+        #     nn.BatchNorm1d(384),
+        #     nn.ReLU(),
+        #     nn.Linear(384, 1),
+        # )
+        self.feature_fusion = nn.Sequential(
+            nn.Linear(768 +snp_number, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Linear(768, 384),
-            nn.BatchNorm1d(384),
-            nn.ReLU(),
-            nn.Linear(384, 1),
+            nn.Linear(64, 1)
         )
         # 模型参数初始化
         self.apply(self._init_weights)
 
     def forward(self, snps, image):
-        x = self.image_features(image)
-        x = torch.cat([x, snps], dim=1)
-        y = self.mlp(x)
+        image_features = self.image_features(image)
+        # gene_features = self.gene_features(snps)
+        # x = torch.cat([ image_features,gene_features,], dim=1)
+        x = torch.cat([image_features, snps], dim=1)
+        y = self.feature_fusion(x)
         return y
 
 
 nets = {
-    f'{GeneNet.__name__}': GeneNet,
+    f'{SNPNet.__name__}': SNPNet,
     f'{ImageNet.__name__}': ImageNet,
     f'{SNPImageNet.__name__}': SNPImageNet,
 }
 
 
 def nets_fake_data(device, model_name: str, batch_size: int, snp_numbers: int = 0):
-    if model_name == GeneNet.__name__:
+    if model_name == SNPNet.__name__:
         return torch.randn(batch_size, snp_numbers).to(device)
     elif model_name == ImageNet.__name__:
         return torch.randn(batch_size, 3, 224, 224).to(device)

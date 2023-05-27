@@ -13,6 +13,7 @@
 """
 __auth__ = 'diklios'
 
+import json
 import os
 
 import torch
@@ -36,9 +37,11 @@ class SNPDataset(Dataset):
     label_data_label_field_name = 'high_myopia'
 
     def __init__(self, label_data_path: str, gene_data_dir_path: str,
+                 gene_freq_file_path: str = None,
                  label_data_id_field_name: str = None, label_data_label_field_name: str = None):
         self.label_data_path = label_data_path
         self.gene_data_dir_path = gene_data_dir_path
+        self.gene_freq_file_path = gene_freq_file_path
         if label_data_id_field_name:
             self.label_data_id_field_name = label_data_id_field_name
         if label_data_label_field_name:
@@ -51,10 +54,11 @@ class SNPDataset(Dataset):
         self.gene_data_file_paths_dict = {
             get_gene_file_participant_id(file_name): os.path.join(self.gene_data_dir_path, file_name)
             for file_name in self.gene_data_file_names}
+        self.gene_freq = json.load(open(self.gene_freq_file_path, 'r')) if self.gene_freq_file_path else None
 
     def get_gene_data(self, label_participant_id):
         gene_file_path = self.gene_data_file_paths_dict[label_participant_id]
-        return handle_gene_file(gene_file_path)
+        return handle_gene_file(gene_file_path, self.gene_freq)
 
     def __getitem__(self, index):
         label_participant_id = self.label_df.loc[index, self.label_data_id_field_name]
@@ -111,10 +115,12 @@ class ImageDataset(Dataset):
 
 class SNPImageDataset(SNPDataset, ImageDataset):
     def __init__(self, label_data_path: str, gene_data_dir_path: str, image_data_dir_path: str,
-                 transform: Compose = None, label_data_id_field_name: str = None):
+                 gene_freq_file_path: str = None, transform: Compose = None,
+                 label_data_id_field_name: str = None):
         self.label_data_path = label_data_path
         self.gene_data_dir_path = gene_data_dir_path
         self.image_data_dir_path = image_data_dir_path
+        self.gene_freq_file_path = gene_freq_file_path
         self.transform = transform if transform else base_image_transforms
         if label_data_id_field_name:
             self.label_data_id_field_name = label_data_id_field_name
@@ -126,6 +132,8 @@ class SNPImageDataset(SNPDataset, ImageDataset):
         self.gene_data_file_paths_dict = {
             get_gene_file_participant_id(file_name): os.path.join(self.gene_data_dir_path, file_name)
             for file_name in self.gene_data_file_names}
+        self.gene_freq = json.load(open(self.gene_freq_file_path, 'r')) if self.gene_freq_file_path else None
+
         self.label_data_dict = {}
         self.set_label_data_dict()
 

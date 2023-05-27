@@ -59,7 +59,8 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
     snps_df = pd.read_csv(chosen_snps_file_path)
     snps_dict = defaultdict(str)
     for index, row in snps_df.iterrows():
-        snps_dict[f"{row['CHR']}:{row['BP']}"] = row['A1']
+        # snps_dict[f"{row['CHR']}:{row['BP']}"] = row['A1']
+        snps_dict[f"{row['chromosome']}:{row['base_pair_location']}"] = row['effect_allele']
     if len(sep) != 1:
         sep = codecs.decode(sep.encode('utf8'), 'unicode_escape')
     # 创建文件

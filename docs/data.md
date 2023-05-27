@@ -2,13 +2,15 @@
 
 ## 数据描述
 
-- UKB数据
+- UKB 数据
 - SuLab 大学生队列数据
 
 ## 数据存放位置
 
 - 眼视光服务器
     - 青少年高度近视队列
+        - 图像数据
+          - /share2/pub/yangjy/yangjy/image/Data/
         - SNP
             - 带P值：/share2/pub/yaoyh/yaoyh/2Data/1Myopia_public/HM_single_variant_YJ.0916.txt
             - 筛选过的：D:\BaiduSyncdisk\Data\SuLabCohort\gene\filtered_snps.csv
@@ -21,13 +23,13 @@
             - /share2/pub/biobank/Image/fundus_image_right
         - Disease Label
             - raw file:`/share2/pub/biobank/Image/participants_label.txt`
-            - /share2/pub/yaoyh/yaoyh/1Project/4UKBB/participants_label.txt
-            - pretreated disease file:`/share2/pub/sunhj/sunhj/Data/GeneticImageAI/participants_label.csv`
+              - /share2/pub/yaoyh/yaoyh/1Project/4UKBB/participants_label.txt
+            - pretreated disease file:`D:\BaiduSyncdisk\Data\UKB\label\participants_label.csv`
         - SNP
             - 原始二进制数据：/share2/pub/biobank/Genotype/Imputation
             - VCF
-                - /share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/AMD_QCed/
-                - /share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/DR_QCed/AMD_Control.001.reheader.vcf
+                - AMD：/share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/AMD_QCed/AMD_Control.001.reheader.vcf
+                - GLC：/share/pub1/zhangy/zhangy/shj
 - 茶山服务器
     - 大学生队列
         - SNP

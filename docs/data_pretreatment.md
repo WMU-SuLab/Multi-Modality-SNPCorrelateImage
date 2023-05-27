@@ -2,11 +2,11 @@
 
 - 数据格式请参考[数据格式文档](data_format.md)
 
-## disease 标签数据
+## 标签数据
 
 - 脚本全部都位于`data_pretreatment/label`
 
-### 数据处理
+### UKB 数据处理
 
 - 第一次处理：将原始数据处理为pandas便于处理的数据格式
     - 运行脚本：`python init.py`
@@ -29,8 +29,11 @@
 
 ### 处理高度近视数据
 
+- 预先处理
+    - 质控数据，去除不全或者重复的人`qc.py`
+    - 创建条形码和参与者ID的映射关系`barcodes.py`
+- 参考脚本`one_eye_statistic.py`制定单眼高度近视标准
 - 参考脚本`two_eyes_statistic.py`制定双眼高度近视标准
-- 使用脚本添加是否高度近视列，参考脚本`myopia.py`
 
 ## gene/snp 数据
 
@@ -39,6 +42,7 @@
 
 ### 数据筛选条件
 
+- 选择 alleles 为2的SNP
 - 为了降低数据的复杂性和不确定性，减少无用数据
 - 从青少年高度近视队列中筛选logistic的 OR>1 和 MLMALOCO 的p<0.05的SNP
     - 但是要注意文件中的A1是否和VCF文件中的ALT一致，这会影响到数据的纯合（是0还是2，1是没有影响的）
@@ -63,7 +67,9 @@
 
 ### 风险位点文件
 
-- 调用脚本`filter_snps.py`根据计算值过滤SNP：`python filter_snps.py test.csv`
+- 调用脚本`filter_snps.py`根据计算值过滤SNP
+-
+例：`python .\data_pretreatment\gene\filter_snps.py D:\BaiduSyncdisk\Data\SuLabCohort\gene\HM_single_variant_YJ.0916.txt --p_value 0.01 --or_value 2`
 
 ### participants file
 
@@ -115,10 +121,8 @@
         - 可以通过`ulimit -n`查看系统的文件打开限制，默认是1024，如果超出，就要想办法提高
     - **后续所有的改进脚本都应该参照这个脚本进行设计**
 - 指定SNP
-    - 使用`speed_up_full_with_chosen_snps.py`
-      脚本：`python speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/ /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_snps.csv -s 118`
-        -
-      nohup版本：`nohup python speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/ /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_snps.csv -s 118 > speed_up_full_with_chosen_snps.txt 2>&1 &`
+    -
+    nohup版本：`nohup python speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/ /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students_MLMALOCO_0.001_OR_2.0 /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/MLMALOCO_0.001_OR_2.0_HM_single_variant_YJ.0916.txt -s 118 > MLMALOCO_0.001_OR_2.0.txt 2>&1 &`
     - 脚本变化
         - 数据文件变为了.gz文件，需要使用`gzip`进行解压处理
         - 单文件变为多文件，即一个文件夹内的所有vcf.gz文件
@@ -145,18 +149,13 @@
 
 ## 总体处理
 
-### 数据集不平衡问题
-
-- 由于数据集中的标签不平衡，需要进行欠采样处理，参考`data_pretreatment/label/undersampling.py`
-
-### 归一化和标准化
-
-- 可以在模型，也可以在dataset加载的时候进行处理，具体参考代码`utils/datasets.py`的`GeneNet`模型
-
 ### 学籍号和条形码对齐
 
 - 请注意提取出来的各个数据集id是否对应，参考脚本`id_barcode_trans.py`进行修正
-- 只能是条形码转学籍号
-    - 有的学生重复进行了采样，但是没有重复测序，可能有些条形码数据是没有的，而学籍号是唯一的
-    - 有些条形码转不了学籍号，需要从旧测序编号中找到对应的新条形码进行转换
-    - 参考脚本`extra_barcodes.py`为`id_barcode_trans.py`的输入数据添加额外数据
+- 只能是条形码转学籍号：有的学生重复进行了采样，但是没有重复测序，可能有些条形码数据是没有的，而学籍号是唯一的
+
+### 数据集不平衡问题（可选）
+
+- 如果由于数据集中的标签不平衡，需要进行欠采样处理，参考`data_pretreatment/label/undersampling.py`
+- 但是这样提升效果可能是假的，不建议使用
+

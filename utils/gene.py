@@ -15,13 +15,13 @@ __auth__ = 'diklios'
 
 import torch
 
-from .normal import min_max_normalization, normalization
 
-
-def handle_gene_file(gene_file_path):
+def handle_gene_file(gene_file_path, gene_freq: list[dict] = None):
     gene_file = open(gene_file_path, 'r')
     gene_data = gene_file.read().strip().split(',')[1:]
     gene_file.close()
-    gene_data = torch.tensor([int(gene) for gene in gene_data], dtype=torch.float32)
-    normalized_gene_data = normalization(min_max_normalization(gene_data))
-    return normalized_gene_data
+    if gene_freq:
+        freq_gene_data = [gene_freq[index][gene] for index, gene in enumerate(gene_data)]
+        return torch.tensor([gene for gene in freq_gene_data], dtype=torch.float32)
+    else:
+        return torch.tensor([int(gene) for gene in gene_data], dtype=torch.float32)

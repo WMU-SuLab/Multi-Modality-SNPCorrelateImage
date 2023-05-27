@@ -17,7 +17,7 @@ import os
 
 import pandas as pd
 
-from .name import get_gene_file_participant_id, get_image_file_participant_id
+from .name import get_label_participant_id, get_gene_file_participant_id, get_image_file_participant_id
 
 
 def intersection_participant_ids(
@@ -25,6 +25,7 @@ def intersection_participant_ids(
     # 标签的id不能为空，图片或者基因如果为空则不进行考虑
     gene_ids = [get_gene_file_participant_id(file_name) for file_name in gene_file_names] if gene_file_names else []
     image_ids = [get_image_file_participant_id(file_name) for file_name in image_file_names] if image_file_names else []
+    label_ids = [get_label_participant_id(label_item) for label_item in label_ids]
     ids = set(label_ids)
     if gene_ids:
         ids = set(gene_ids) & ids
@@ -62,7 +63,7 @@ def intersection_participants_data(
     ids, label_df, gene_file_names, image_file_names = intersection_participants_ids_with_path(
         label_data_path, gene_data_dir_path, image_data_dir_path, label_data_id_field_name
     )
-    label_df = label_df[label_df[label_data_id_field_name].isin(ids)]
+    label_df = label_df[label_df[label_data_id_field_name].apply(get_label_participant_id).isin(ids)]
     gene_data_file_names = [
         file_name
         for file_name in gene_file_names
