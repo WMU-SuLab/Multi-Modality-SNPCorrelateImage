@@ -1,5 +1,7 @@
 # Data
 
+记录的是服务器上原始文件位置，非处理后的数据
+
 ## 数据描述
 
 - UKB 数据
@@ -29,7 +31,7 @@
             - 原始二进制数据：/share2/pub/biobank/Genotype/Imputation
             - VCF
                 - AMD：/share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/AMD_QCed/AMD_Control.001.reheader.vcf
-                - GLC：/share/pub1/zhangy/zhangy/shj
+                - GLC：/share/pub1/zhangy/zhangy/shj/glc.vcf
 - 茶山服务器
     - 大学生队列
         - SNP

@@ -33,12 +33,12 @@ def main(input_file_path: str, output_file_name: str, p_value: float, or_value: 
     df = pd.read_csv(input_file_path, sep='\t')
     df['OR'] = math.exp(df['beta'])
     if or_value and p_value:
-        df = df[(df['OR'] > or_value) & (df['MLMALOCO'] < p_value)]
+        df = df[(df['OR'] > or_value) & (df['p_value'] < p_value)]
     elif p_value:
-        df = df[df['MLMALOCO'] < p_value]
+        df = df[df['p_value'] < p_value]
     elif or_value:
         df = df[df['OR'] > or_value]
     else:
         raise ValueError('请至少输入一个筛选条件')
     print(df.shape)
-    df.to_csv(os.path.join(input_dir, f'MLMALOCO_{p_value}_OR_{or_value}_{output_file_name}'), index=False)
+    df.to_csv(os.path.join(input_dir, f'p_value_{p_value}_OR_{or_value}_{output_file_name}'), index=False)

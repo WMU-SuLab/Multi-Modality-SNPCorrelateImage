@@ -19,7 +19,7 @@ import click
 
 from base import data_divide_dir
 from utils.dir import mk_dir
-from utils.name import get_image_file_participant_id, get_gene_file_participant_id
+from utils.name import get_label_participant_id, get_gene_file_participant_id, get_image_file_participant_id_instance
 from utils.participants import intersection_participants_ids_with_path
 from utils.time import datetime_now
 
@@ -94,6 +94,7 @@ def mk_dataset_paths(dataset_dir_path: str):
 
 
 def gene_data_mk_link(participant_ids: list, gene_data_dir_path: str, new_gene_data_dir_path: str):
+    map(get_gene_file_participant_id, participant_ids)
     gene_data_file_names = [
         gene_data_file_name
         for gene_data_file_name in os.listdir(gene_data_dir_path)
@@ -110,7 +111,7 @@ def image_data_mk_link(participant_ids: list, image_data_dir_path: str, new_imag
     image_data_file_names = [
         image_data_file_name
         for image_data_file_name in os.listdir(image_data_dir_path)
-        if get_image_file_participant_id(image_data_file_name) in participant_ids
+        if get_image_file_participant_id_instance(image_data_file_name) in participant_ids
     ]
     for image_data_file_name in image_data_file_names:
         os.symlink(
@@ -164,9 +165,8 @@ def train_valid_test_split(
     participants_ids, label_df, gene_file_names, image_file_names = intersection_participants_ids_with_path(
         label_data_path, gene_data_dir_path, image_data_dir_path, label_data_id_field_name
     )
-    label_df = label_df[label_df[label_data_id_field_name].isin(participants_ids)]
-    label_participants = label_df[label_data_id_field_name].tolist()
-    label_df_length = len(label_participants)
+    label_df = label_df[label_df[label_data_id_field_name].apply(get_label_participant_id).isin(participants_ids)]
+    label_df_length = label_df[label_data_id_field_name].count()
     print(f'筛选完后可用的: {label_df_length}')
     # 打乱
     label_df = label_df.sample(frac=1).reset_index(drop=True)

@@ -31,8 +31,8 @@ from utils import setup_seed
 from utils.dir import mk_dir
 from utils.finish import finish_train
 from utils.metrics import count_metrics_binary_classification
-from utils.mk_data_loaders import mk_train_multi_data_loaders_funcs
-from utils.multi_gpus import init_distributed_mode, barrier, reduce_value,cleanup
+from utils.mk_data_loaders import mk_data_loaders_multi_funcs
+from utils.multi_gpus import init_distributed_mode, barrier, reduce_value, cleanup
 from utils.records import experiments_record, train_epoch_record
 from utils.time import datetime_now
 from utils.workflow import workflows
@@ -47,6 +47,9 @@ from utils.workflow import workflows
 @click.argument('model_name', type=str)
 @click.argument('dataset_dir_path', type=click.Path(exists=True))
 @click.option('--snp_numbers', type=int, default=0, help='snp numbers')
+@click.option('--gene_freq_file_path', type=click.Path(exists=True), default=None, help='gene freq file path')
+@click.option('--label_data_id_field_name', type=str, default=None, help='label data id field name')
+@click.option('--label_data_label_field_name', type=str, default=None, help='label data label field name')
 @click.option('--epochs', default=10, help='epochs')
 @click.option('--batch_size', default=8, help='batch size')
 @click.option('--lr', default=1e-4, help='learning rate')
@@ -64,6 +67,7 @@ from utils.workflow import workflows
 def main(
         rank, local_rank: int, world_size: int, dist_backend: str, seed: int,
         model_name: str, dataset_dir_path: str, snp_numbers: int,
+        gene_freq_file_path: str, label_data_id_field_name: str, label_data_label_field_name: str,
         epochs: int, batch_size: int, lr: float, step_size: int, gamma: float,
         log_interval: int, save_interval: int,
         pretrain_wts_path: str, pretrain_image_feature_checkpoint_path: str,
@@ -108,7 +112,7 @@ def main(
     setup_seed(seed)
     # 初始化网络
     net = init_net(device, model_name, snp_numbers, pretrain_wts_path, pretrain_image_feature_checkpoint_path)
-    net = ddp(net, device_ids=[local_rank],output_device=local_rank,find_unused_parameters=True)
+    net = ddp(net, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
     # 初始化策略
     optimizer, scheduler, criterion, loss_early_stopping = init_strategy(
         net, lr, step_size, gamma, early_stopping_step, early_stopping_delta)
@@ -134,7 +138,15 @@ def main(
         writer.add_graph(net, nets_fake_data(device, model_name, batch_size, snp_numbers))
     # 加载数据集
     data_paths = mk_dataset_paths(dataset_dir_path)
-    data_loaders, samplers = mk_train_multi_data_loaders_funcs[model_name](data_paths, batch_size)
+    data_loaders_func = mk_data_loaders_multi_funcs[model_name]
+    data_loaders_func_kwargs = {'data_paths': data_paths, 'batch_size': batch_size}
+    if gene_freq_file_path:
+        data_loaders_func_kwargs['gene_freq_file_path'] = gene_freq_file_path
+    if label_data_id_field_name:
+        data_loaders_func_kwargs['label_data_id_field_name'] = label_data_id_field_name
+    if label_data_label_field_name:
+        data_loaders_func_kwargs['label_data_label_field_name'] = label_data_label_field_name
+    data_loaders, samplers = data_loaders_func[model_name](data_paths, batch_size)
     # 初始化参数
     best_model_wts = copy.deepcopy(net.state_dict())
     best_f1 = 0

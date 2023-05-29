@@ -36,7 +36,8 @@ class SNPDataset(Dataset):
     # label_data_label_field_name = '是否高度近视-SE'
     label_data_label_field_name = 'high_myopia'
 
-    def __init__(self, label_data_path: str, gene_data_dir_path: str,
+    def __init__(
+            self, label_data_path: str, gene_data_dir_path: str,
                  gene_freq_file_path: str = None,
                  label_data_id_field_name: str = None, label_data_label_field_name: str = None):
         self.label_data_path = label_data_path
@@ -74,8 +75,10 @@ class ImageDataset(Dataset):
     label_data_id_field_name = '学籍号'
     label_data_label_field_name = 'high_myopia'
 
-    def __init__(self, label_data_path: str, image_data_dir_path: str,
-                 transform=None, label_data_id_field_name: str = None, label_data_label_field_name: str = None):
+    def __init__(
+            self, label_data_path: str, image_data_dir_path: str,
+            transform=None,
+            label_data_id_field_name: str = None, label_data_label_field_name: str = None):
         self.label_data_path = label_data_path
         self.image_data_dir_path = image_data_dir_path
         self.transform = transform if transform else base_image_transforms
@@ -114,9 +117,10 @@ class ImageDataset(Dataset):
 
 
 class SNPImageDataset(SNPDataset, ImageDataset):
-    def __init__(self, label_data_path: str, gene_data_dir_path: str, image_data_dir_path: str,
-                 gene_freq_file_path: str = None, transform: Compose = None,
-                 label_data_id_field_name: str = None):
+    def __init__(
+            self, label_data_path: str, gene_data_dir_path: str, image_data_dir_path: str,
+            gene_freq_file_path: str = None, transform: Compose = None,
+            label_data_id_field_name: str = None, label_data_label_field_name: str = None):
         self.label_data_path = label_data_path
         self.gene_data_dir_path = gene_data_dir_path
         self.image_data_dir_path = image_data_dir_path
@@ -124,7 +128,8 @@ class SNPImageDataset(SNPDataset, ImageDataset):
         self.transform = transform if transform else base_image_transforms
         if label_data_id_field_name:
             self.label_data_id_field_name = label_data_id_field_name
-
+        if label_data_label_field_name:
+            self.label_data_label_field_name = label_data_label_field_name
         self.label_df, self.gene_data_file_names, self.image_data_file_names = intersection_participants_data(
             label_data_path, gene_data_dir_path=gene_data_dir_path, image_data_dir_path=image_data_dir_path,
             label_data_id_field_name=self.label_data_id_field_name,
@@ -138,9 +143,9 @@ class SNPImageDataset(SNPDataset, ImageDataset):
         self.set_label_data_dict()
 
     def __getitem__(self, index):
-        label_participant_id, image, label_data = self.get_image_label_data(self.image_data_file_names[index])
-        gene_data = self.get_gene_data(label_participant_id)
-        return (gene_data, image), torch.tensor([label_data], dtype=torch.float32)
+            label_participant_id, image, label_data = self.get_image_label_data(self.image_data_file_names[index])
+            gene_data = self.get_gene_data(label_participant_id)
+            return (gene_data, image), torch.tensor([label_data], dtype=torch.float32)
 
     def __len__(self):
         return ImageDataset.__len__(self)

@@ -23,17 +23,20 @@ from .multi_gpus import get_world_size, get_rank
 from .transforms import gene_image_transforms
 
 
-def mk_data_loaders(
-        dataset, train_dataset_args: tuple, valid_dataset_args: tuple, test_dataset_args: tuple,
-        test_dataset_judge_args: tuple, batch_size: int = 8, drop_last: bool = False):
+def mk_data_loaders_single(
+        dataset,
+        train_dataset_args: tuple, train_dataset_kwargs: dict,
+        valid_dataset_args: tuple, valid_dataset_kwargs: dict,
+        test_dataset_judge_args: tuple, test_dataset_args: tuple, test_dataset_kwargs: dict,
+        batch_size: int = 8, drop_last: bool = False):
     data_loaders = {
         'train': DataLoader(
-            dataset(*train_dataset_args),
+            dataset(*train_dataset_args, **train_dataset_kwargs),
             batch_size=batch_size, shuffle=True, drop_last=drop_last,
             num_workers=4, pin_memory=True,
         ),
         'valid': DataLoader(
-            dataset(*valid_dataset_args),
+            dataset(*valid_dataset_args, **valid_dataset_kwargs),
             batch_size=batch_size, shuffle=True, drop_last=drop_last,
             num_workers=4, pin_memory=True,
         ),
@@ -41,71 +44,27 @@ def mk_data_loaders(
     if test_dataset_judge_args and all(
             [os.listdir(test_dataset_judge_arg) for test_dataset_judge_arg in test_dataset_judge_args]):
         data_loaders['test'] = DataLoader(
-            dataset(*test_dataset_args),
+            dataset(*test_dataset_args, **test_dataset_kwargs),
             batch_size=batch_size, shuffle=True, drop_last=drop_last,
             num_workers=4, pin_memory=True,
         )
     return data_loaders
 
 
-def mk_myopia_gene_net_data_loaders(
-        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
-        drop_last: bool = False):
-    return mk_data_loaders(
-        SNPDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['test_gene_dir_path'],),
-        batch_size=batch_size, drop_last=drop_last
-    )
-
-
-def mk_myopia_image_net_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
-    return mk_data_loaders(
-        ImageDataset,
-        (data_paths['train_label_file_path'], data_paths['train_image_dir_path'], gene_image_transforms['train']),
-        (data_paths['valid_label_file_path'], data_paths['valid_image_dir_path'], gene_image_transforms['valid']),
-        (data_paths['test_label_file_path'], data_paths['test_image_dir_path'], gene_image_transforms['test']),
-        (data_paths['test_image_dir_path'],),
-        batch_size=batch_size, drop_last=drop_last
-    )
-
-
-def mk_myopia_gene_image_net_data_loaders(
-        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
-        drop_last: bool = False):
-    return mk_data_loaders(
-        SNPImageDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], data_paths['train_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['train']),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], data_paths['valid_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['valid']),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['test']),
-        (data_paths['test_gene_dir_path'], data_paths['test_image_dir_path']),
-        batch_size=batch_size, drop_last=drop_last
-    )
-
-
-mk_data_loaders_funcs = {
-    'SNPNet': mk_myopia_gene_net_data_loaders,
-    'ImageNet': mk_myopia_image_net_data_loaders,
-    'SNPImageNet': mk_myopia_gene_image_net_data_loaders
-}
-
-
-def mk_train_multi_data_loaders(
-        dataset, train_dataset_args: tuple, valid_dataset_args: tuple, test_dataset_args: tuple,
-        test_dataset_judge_args: tuple, batch_size: int = 8, drop_last: bool = False):
-    train_dataset = dataset(*train_dataset_args)
+def mk_data_loaders_multi(
+        dataset,
+        train_dataset_args: tuple, train_dataset_kwargs: dict,
+        valid_dataset_args: tuple, valid_dataset_kwargs: dict,
+        test_dataset_judge_args: tuple, test_dataset_args: tuple, test_dataset_kwargs: dict,
+        batch_size: int = 8, drop_last: bool = False):
+    train_dataset = dataset(*train_dataset_args, **train_dataset_kwargs)
     train_distributed_sampler = DistributedSampler(train_dataset, num_replicas=get_world_size(), rank=get_rank())
     train_batch_sampler = BatchSampler(train_distributed_sampler, batch_size=batch_size, drop_last=drop_last)
     train_data_loader = DataLoader(
         train_dataset, batch_sampler=train_batch_sampler,
         # num_workers=4, pin_memory=True,
     )
-    valid_dataset = dataset(*valid_dataset_args)
+    valid_dataset = dataset(*valid_dataset_args, **valid_dataset_kwargs)
     valid_distributed_sampler = DistributedSampler(valid_dataset, num_replicas=get_world_size(), rank=get_rank())
     valid_batch_sampler = BatchSampler(valid_distributed_sampler, batch_size=batch_size, drop_last=drop_last)
     valid_data_loader = DataLoader(
@@ -116,7 +75,7 @@ def mk_train_multi_data_loaders(
     samplers = {'train': train_distributed_sampler, 'valid': valid_distributed_sampler}
     if test_dataset_judge_args and all(
             [os.listdir(test_dataset_judge_arg) for test_dataset_judge_arg in test_dataset_judge_args]):
-        test_dataset = dataset(*test_dataset_args)
+        test_dataset = dataset(*test_dataset_args, **test_dataset_kwargs)
         test_distributed_sampler = DistributedSampler(test_dataset, num_replicas=get_world_size(), rank=get_rank())
         test_batch_sampler = BatchSampler(test_distributed_sampler, batch_size=batch_size, drop_last=drop_last)
         test_data_loader = DataLoader(
@@ -128,50 +87,89 @@ def mk_train_multi_data_loaders(
     return data_loaders, samplers
 
 
-def mk_myopia_gene_net_train_multi_data_loaders(
-        data_paths: dict, batch_size: int, gene_freq_file_path: str = None,
-        drop_last: bool = False):
-    return mk_train_multi_data_loaders(
-        SNPDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], gene_freq_file_path,),
-        (data_paths['test_gene_dir_path'],),
-        batch_size=batch_size, drop_last=drop_last
-    )
+class MkDataLoaders:
+    def __init__(self, data_loader_type):
+        self.data_loader_type = data_loader_type
+        if data_loader_type == 'single':
+            self.mk_data_loaders = mk_data_loaders_single
+        elif data_loader_type == 'multi':
+            self.mk_data_loaders = mk_data_loaders_multi
+        else:
+            raise ValueError('data_loader_type must be single or multi')
 
 
-def mk_myopia_image_net_train_multi_data_loaders(data_paths: dict, batch_size: int, drop_last: bool = False):
-    return mk_train_multi_data_loaders(
-        ImageDataset,
-        (data_paths['train_label_file_path'], data_paths['train_image_dir_path'], gene_image_transforms['train']),
-        (data_paths['valid_label_file_path'], data_paths['valid_image_dir_path'], gene_image_transforms['valid']),
-        (data_paths['test_label_file_path'], data_paths['test_image_dir_path'], gene_image_transforms['test']),
-        (data_paths['test_image_dir_path'],),
-        batch_size=batch_size, drop_last=drop_last
-    )
+class MkSNPNetDataLoaders(MkDataLoaders):
+    def __call__(
+            self, data_paths: dict, gene_freq_file_path: str = None,
+            batch_size: int = 8, drop_last: bool = False, **kwargs):
+        return self.mk_data_loaders(
+            SNPDataset,
+            # train
+            (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], gene_freq_file_path,),
+            kwargs,
+            # valid
+            (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], gene_freq_file_path,),
+            kwargs,
+            # test
+            (data_paths['test_gene_dir_path'],),
+            (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], gene_freq_file_path,),
+            kwargs,
+            batch_size=batch_size, drop_last=drop_last
+        )
 
 
-def mk_myopia_gene_image_net_train_multi_data_loaders(
-        data_paths: dict, batch_size: int,
-        gene_freq_file_path: str = None, drop_last: bool = False):
-    return mk_train_multi_data_loaders(
-        ImageDataset,
-        (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], data_paths['train_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['train']),
-        (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], data_paths['valid_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['valid']),
-        (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],
-         gene_freq_file_path, gene_image_transforms['test']),
-        (data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],),
-        batch_size=batch_size, drop_last=drop_last
-    )
+class MkImageNetDataLoaders(MkDataLoaders):
+    def __call__(
+            self, data_paths: dict, batch_size: int = 8, drop_last: bool = False, **kwargs):
+        return self.mk_data_loaders(
+            ImageDataset,
+            # train
+            (data_paths['train_label_file_path'], data_paths['train_image_dir_path'], gene_image_transforms['train']),
+            kwargs,
+            # valid
+            (data_paths['valid_label_file_path'], data_paths['valid_image_dir_path'], gene_image_transforms['valid']),
+            kwargs,
+            # test
+            (data_paths['test_image_dir_path'],),
+            (data_paths['test_label_file_path'], data_paths['test_image_dir_path'], gene_image_transforms['test']),
+            kwargs,
+            batch_size=batch_size, drop_last=drop_last
+        )
 
 
-mk_train_multi_data_loaders_funcs = {
-    'SNPNet': mk_myopia_gene_net_train_multi_data_loaders,
-    'ImageNet': mk_myopia_image_net_train_multi_data_loaders,
-    'SNPImageNet': mk_myopia_gene_image_net_train_multi_data_loaders,
+class MkSNPImageNetDataLoaders(MkDataLoaders):
+    def __call__(
+            self, data_paths: dict, gene_freq_file_path: str = None,
+            batch_size: int = 8, drop_last: bool = False, **kwargs):
+        return self.mk_data_loaders(
+            SNPImageDataset,
+            # train
+            (data_paths['train_label_file_path'], data_paths['train_gene_dir_path'], data_paths['train_image_dir_path'],
+             gene_freq_file_path, gene_image_transforms['train']),
+            kwargs,
+            # valid
+            (data_paths['valid_label_file_path'], data_paths['valid_gene_dir_path'], data_paths['valid_image_dir_path'],
+             gene_freq_file_path, gene_image_transforms['valid']),
+            kwargs,
+            # test
+            (data_paths['test_gene_dir_path'], data_paths['test_image_dir_path']),
+            (data_paths['test_label_file_path'], data_paths['test_gene_dir_path'], data_paths['test_image_dir_path'],
+             gene_freq_file_path, gene_image_transforms['test']),
+            kwargs,
+            batch_size=batch_size, drop_last=drop_last
+        )
+
+
+mk_data_loaders_single_funcs = {
+    'SNPNet': MkSNPNetDataLoaders('single'),
+    'ImageNet': MkImageNetDataLoaders('single'),
+    'SNPImageNet': MkSNPImageNetDataLoaders('single'),
 }
 
-__all__ = ['mk_data_loaders_funcs', 'mk_train_multi_data_loaders_funcs']
+mk_data_loaders_multi_funcs = {
+    'SNPNet': MkSNPNetDataLoaders('multi'),
+    'ImageNet': MkImageNetDataLoaders('multi'),
+    'SNPImageNet': MkSNPImageNetDataLoaders('multi'),
+}
+
+__all__ = ['mk_data_loaders_single_funcs', 'mk_data_loaders_multi_funcs']

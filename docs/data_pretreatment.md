@@ -121,8 +121,11 @@
         - 可以通过`ulimit -n`查看系统的文件打开限制，默认是1024，如果超出，就要想办法提高
     - **后续所有的改进脚本都应该参照这个脚本进行设计**
 - 指定SNP
-    -
-    nohup版本：`nohup python speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/ /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students_MLMALOCO_0.001_OR_2.0 /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/MLMALOCO_0.001_OR_2.0_HM_single_variant_YJ.0916.txt -s 118 > MLMALOCO_0.001_OR_2.0.txt 2>&1 &`
+    - 直接运行：`/share2/pub/sunhj/sunhj/Soft/miniconda3/envs/algorithm/bin/python /share2/pub/sunhj/sunhj/Code/Multi-Modality-SNPCorrelateImage/data_pretreatment/gene/speed_up_full_with_chosen_snps.py /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage/glc_snps_p_0.05_OR_1.0 /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage/filter_p_0.05_OR_1_GCST90018852_buildGRCh37.tsv -s 28`
+      - 如果集群禁止创建太多文件需要提交任务作业
+    - nohup版本
+      - `nohup python speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/ /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students_snps_MLMALOCO_0.001_OR_2.0 /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/MLMALOCO_0.001_OR_2.0_HM_single_variant_YJ.0916.txt -s 118 > students_snps_MLMALOCO_0.001_OR_2.0.txt 2>&1 &`
+      - `nohup python data_pretreatment/gene/speed_up_full_with_chosen_snps.py /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage/glc_snps_p_0.05_OR_1.0 /share2/pub/sunhj/sunhj/Data/Multi-Modality-SNPCorrelateImage/filter_p_0.05_OR_1_GCST90018852_buildGRCh37.tsv -s 28 > glc_snps_p_0.05_OR_1.0.txt 2>&1 &`
     - 脚本变化
         - 数据文件变为了.gz文件，需要使用`gzip`进行解压处理
         - 单文件变为多文件，即一个文件夹内的所有vcf.gz文件

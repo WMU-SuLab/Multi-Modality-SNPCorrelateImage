@@ -30,7 +30,7 @@ from utils import setup_seed
 from utils.dir import mk_dir
 from utils.finish import finish_train
 from utils.metrics import count_metrics_binary_classification
-from utils.mk_data_loaders import mk_data_loaders_funcs
+from utils.mk_data_loaders import mk_data_loaders_single_funcs
 from utils.records import experiments_record, train_epoch_record
 from utils.time import datetime_now
 from utils.workflow import workflows
@@ -42,6 +42,8 @@ from utils.workflow import workflows
 @click.argument('dataset_dir_path', type=click.Path(exists=True))
 @click.option('--snp_numbers', type=int, default=0, help='snp numbers')
 @click.option('--gene_freq_file_path', type=click.Path(exists=True), default=None, help='gene freq file path')
+@click.option('--label_data_id_field_name', type=str, default=None, help='label data id field name')
+@click.option('--label_data_label_field_name', type=str, default=None, help='label data label field name')
 @click.option('--epochs', default=10, help='epochs')
 @click.option('--batch_size', default=8, help='batch size')
 @click.option('--lr', default=1e-4, help='learning rate')
@@ -57,7 +59,8 @@ from utils.workflow import workflows
 @click.option('--train_dir_prefix', default=datetime_now(), type=str, help='train dir prefix')
 @click.option('--remarks', default=None, help='remarks')
 def main(
-        seed: int, model_name: str, dataset_dir_path: str, snp_numbers: int, gene_freq_file_path: str,
+        seed: int, model_name: str, dataset_dir_path: str, snp_numbers: int,
+        gene_freq_file_path: str, label_data_id_field_name: str, label_data_label_field_name: str,
         epochs: int, batch_size: int, lr: float, step_size: int, gamma: float,
         log_interval: int, save_interval: int,
         pretrain_wts_path: str, pretrain_image_feature_checkpoint_path: str,
@@ -91,10 +94,14 @@ def main(
     # 加载数据集
     # attention:需要使用dataset模块中的方法从原始数据中生成数据集，否则需要自己手动更改以下 dataloader 的各个文件和文件夹路径
     data_paths = mk_dataset_paths(dataset_dir_path)
-    data_loaders_func = mk_data_loaders_funcs[model_name]
+    data_loaders_func = mk_data_loaders_single_funcs[model_name]
     data_loaders_func_kwargs = {'data_paths': data_paths, 'batch_size': batch_size}
     if gene_freq_file_path:
         data_loaders_func_kwargs['gene_freq_file_path'] = gene_freq_file_path
+    if label_data_id_field_name:
+        data_loaders_func_kwargs['label_data_id_field_name'] = label_data_id_field_name
+    if label_data_label_field_name:
+        data_loaders_func_kwargs['label_data_label_field_name'] = label_data_label_field_name
     data_loaders = data_loaders_func(**data_loaders_func_kwargs)
     # 初始化参数
     best_model_wts = copy.deepcopy(net.state_dict())

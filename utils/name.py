@@ -23,10 +23,12 @@ def generate_gene_file_name(participant_id: str) -> str:
 def get_label_participant_id(label_id: str) -> str:
     return label_id.split('-')[0]
 
+def get_image_file_participant_id_instance(image_file_name: str) -> str:
+    return os.path.splitext(image_file_name)[0].split('_')[0]
 
 def get_image_file_participant_id(image_file_name: str) -> str:
-    return os.path.splitext(image_file_name)[0].split('_')[0].split('-')[0]
+    return get_image_file_participant_id_instance(image_file_name).split('-')[0]
 
 
 def get_gene_file_participant_id(gene_file_name: str) -> str:
-    return os.path.splitext(gene_file_name)[0].split('_')[0].split('-')[0]
+    return os.path.splitext(gene_file_name)[0].split('_')[0]

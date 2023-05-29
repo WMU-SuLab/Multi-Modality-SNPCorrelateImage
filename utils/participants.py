@@ -17,7 +17,8 @@ import os
 
 import pandas as pd
 
-from .name import get_label_participant_id, get_gene_file_participant_id, get_image_file_participant_id
+from .name import get_label_participant_id, get_gene_file_participant_id, \
+    get_image_file_participant_id_instance, get_image_file_participant_id
 
 
 def intersection_participant_ids(
@@ -64,6 +65,7 @@ def intersection_participants_data(
         label_data_path, gene_data_dir_path, image_data_dir_path, label_data_id_field_name
     )
     label_df = label_df[label_df[label_data_id_field_name].apply(get_label_participant_id).isin(ids)]
+    label_df_ids = label_df[label_data_id_field_name].tolist()
     gene_data_file_names = [
         file_name
         for file_name in gene_file_names
@@ -71,7 +73,7 @@ def intersection_participants_data(
     image_data_file_names = [
         file_name
         for file_name in image_file_names
-        if get_image_file_participant_id(file_name) in ids]
+        if get_image_file_participant_id_instance(file_name) in label_df_ids]
     data = [label_df]
     if gene_data_dir_path:
         data.append(gene_data_file_names)

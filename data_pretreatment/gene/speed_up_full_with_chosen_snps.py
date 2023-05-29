@@ -56,6 +56,7 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
         filtered_participant_ids = limit_participants_df['ID'].tolist()
     else:
         filtered_participant_ids = []
+    # attention:这里可能根据情况需要改代码
     snps_df = pd.read_csv(chosen_snps_file_path)
     snps_dict = defaultdict(str)
     for index, row in snps_df.iterrows():
@@ -116,7 +117,8 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
                 columns_file.write(f',{snp_id}')
                 for index, file in enumerate(participant_files):
                     file.write(f',{regularized_columns[index]}')
-                if count % 100 == 0:
+                # 根据情况需要更改刷新文件的行数
+                if count % 10 == 0:
                     columns_file.flush()
                     for file in participant_files:
                         file.flush()
