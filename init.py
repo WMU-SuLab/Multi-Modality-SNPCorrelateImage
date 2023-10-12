@@ -42,11 +42,11 @@ def init_net(
     return net
 
 
-def init_strategy(net, lr, step_size, gamma, early_stopping_step, early_stopping_delta):
+def init_strategy(net, lr, step_size, gamma, last_epoch, early_stopping_step, early_stopping_delta):
     # 定义损失函数和优化器
     optimizer = optim.Adam(filter(lambda parameter: parameter.requires_grad, net.parameters()), lr=lr)
     # 学习率每 n 个 epoch 减少一次，衰减为原来的十分之一
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma, last_epoch=last_epoch)
     # 确定损失函数
     criterion = nn.BCEWithLogitsLoss()
     # 早停策略

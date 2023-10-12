@@ -14,16 +14,26 @@
 __auth__ = 'diklios'
 
 import torch
+import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
+from .compute.metrics import count_metrics_binary_classification
 from .multi_gpus import barrier, reduce_value
 from .records import test_metrics_record
 from .task import binary_classification_task
 
 
-def train_valid_workflow(device, net, criterion, optimizer, data_loader_iter, phase, multi_gpu: bool = False):
+def train_valid_workflow(device, net, criterion, optimizer, scheduler, data_loader_iter, data_loaders, phase,
+                         multi_gpu: bool = False):
+    if phase == 'train':
+        # 训练
+        net.train()
+    else:
+        # 验证
+        net.eval()
     y_true, y_pred, y_score = [], [], []
     running_loss = 0.0
+    # 循环所有数据
     for inputs, labels in data_loader_iter:
         inputs = [each_input.to(device) for each_input in inputs]
         labels = labels.to(device)
@@ -36,27 +46,32 @@ def train_valid_workflow(device, net, criterion, optimizer, data_loader_iter, ph
         # 前向传播
         with torch.set_grad_enabled(phase == 'train'):
             outputs = net(*inputs)
-            loss, y_pred_batch, y_score_batch = binary_classification_task(outputs, labels, criterion=criterion)
-            y_pred += y_pred_batch
-            y_score += y_score_batch
-            # 只有训练的时候才会更新梯度
-            if phase == 'train':
-                loss.backward()
-                optimizer.step()
+        loss, y_pred_batch, y_score_batch = binary_classification_task(outputs, labels, criterion=criterion)
+        y_pred += y_pred_batch
+        y_score += y_score_batch
+        # 只有训练的时候才会更新梯度
+        if phase == 'train':
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
         # 计算损失
         if multi_gpu:
             barrier()
             loss = reduce_value(loss)
         running_loss += loss.item()
-    return running_loss, y_true, y_pred, y_score
+    # 计算损失
+    epoch_loss = running_loss / len(data_loaders[phase].dataset)
+    # 计算指标
+    all_metrics = count_metrics_binary_classification(y_true, y_pred, y_score)
+    return epoch_loss, all_metrics
 
 
-def test_workflow(device, net, dataloader, writer: SummaryWriter):
+def test_workflow(device, net, data_loaders, writer: SummaryWriter):
     net.eval()
     # 注意不能使用连续赋值
     y_true, y_pred, y_score = [], [], []
     # 循环所有数据
-    for inputs, labels in dataloader:
+    for inputs, labels in tqdm.tqdm(data_loaders):
         inputs = [each_input.to(device) for each_input in inputs]
         labels = labels.to(device)
         y_true += labels.int().reshape(-1).tolist()

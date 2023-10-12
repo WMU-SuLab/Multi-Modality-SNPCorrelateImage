@@ -33,4 +33,4 @@ def setup_seed(seed: int):
 
 
 if __name__ == '__main__':
-    setup_seed(20230410)
+    setup_seed(2023)

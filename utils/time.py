@@ -16,8 +16,16 @@ __auth__ = 'diklios'
 from datetime import datetime
 
 
-def datetime_now():
+def datetime_now() -> datetime:
     # 获取当前时间
-    return datetime.now().strftime('%Y%m%d%H%M%S')
+    return datetime.now()
+
+
+def datetime_now_str() -> str:
+    # 获取处理后的时间
+    return datetime_now().strftime('%Y%m%d%H%M%S')
+
+
+def datetime_now_str_multi_train() -> str:
     # 为了防止多GPU训练的时候出错，所以去掉秒
-    # return datetime.now().strftime('%Y%m%d%H%M')
+    return datetime_now().strftime('%Y%m%d%H%M')

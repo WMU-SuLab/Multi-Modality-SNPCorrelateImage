@@ -20,7 +20,8 @@ class LossEarlyStopping:
     """
     这个早停类不做除了是否早停外的其他操作（保存模型和权重等等）
     """
-    def __init__(self, patience: int = 7, delta: float = 0):
+
+    def __init__(self, patience: int = 7, delta: float = 0, silent: bool = False):
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
@@ -41,6 +42,8 @@ class LossEarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
+        self.silent = silent
+
     def __call__(self, val_loss):
         score = -val_loss
         if self.best_score is None:
@@ -48,7 +51,8 @@ class LossEarlyStopping:
             self.val_loss_min = val_loss
         elif score < self.best_score + self.delta:
             self.counter += 1
-            print(f'{self.__class__.__name__} counter: {self.counter} out of {self.patience}')
+            if not self.silent:
+                print(f'{self.__class__.__name__} counter: {self.counter} out of {self.patience}')
             if self.counter >= self.patience:
                 self.early_stop = True
         else:

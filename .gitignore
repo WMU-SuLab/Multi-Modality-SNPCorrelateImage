@@ -152,5 +152,8 @@ gen
 # python缓存
 *.pyc
 
+# Good Sync 缓存文件
+_gsdata_
+
 # 项目特有配置
 data

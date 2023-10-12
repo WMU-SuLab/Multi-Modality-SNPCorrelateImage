@@ -67,9 +67,8 @@
 
 ### 风险位点文件
 
-- 调用脚本`filter_snps.py`根据计算值过滤SNP
--
-例：`python .\data_pretreatment\gene\filter_snps.py D:\BaiduSyncdisk\Data\SuLabCohort\gene\HM_single_variant_YJ.0916.txt --p_value 0.01 --or_value 2`
+- 调用脚本`filter_glc_snps.py`或者`filter_high_myopia_snps.py`根据计算值过滤SNP
+- 例：`nohup python /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data_pretreatment/gene/speed_up_full_with_chosen_snps.py /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/students_snps_P_0.001_OR_2.0_S8114_final_fastgwa_SE1 /share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/P_0.001_OR_2.0_S8114_final_fastgwa_SE1.fastGWA > students_snps_P_0.001_OR_2.0_S8114_final_fastgwa_SE1.txt 2>&1`
 
 ### participants file
 

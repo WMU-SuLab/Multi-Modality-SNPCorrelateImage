@@ -23,16 +23,12 @@ from time import time
 import click
 import pandas as pd
 
-from base import snp_info_columns
+from base import snp_info_columns, regularize_rules
 
-regularize_rules = {
-    './.': 0,
-    '0/0': 0,
-    '0/1': 1,
-    '1/0': 1,
-    '1/1': 2,
-    '0/2': 2,
-}
+
+# 在Windows上面解决打开文件数量太多的问题，设置的数量最高为8192，参考https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/setmaxstdio?view=msvc-170#remarks
+# import win32file
+# win32file._setmaxstdio(8192)
 
 
 @click.command()
@@ -47,6 +43,7 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
     input_dir_path = os.path.abspath(input_dir_path)
     input_file_names = [file_name for file_name in os.listdir(input_dir_path) if file_name.endswith('.vcf.gz')]
     input_file_paths = [os.path.join(input_dir_path, file_name) for file_name in input_file_names]
+    print(input_file_paths)
     chosen_snps_file_path = os.path.abspath(chosen_snps_file_path)
     if not os.path.exists(output_dir_path) or not os.path.isdir(output_dir_path):
         os.mkdir(output_dir_path)
@@ -56,12 +53,12 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
         filtered_participant_ids = limit_participants_df['ID'].tolist()
     else:
         filtered_participant_ids = []
-    # attention:这里可能根据情况需要改代码
+    # attention:这里可能根据情况需要改代码，比如分隔符和dtype
     snps_df = pd.read_csv(chosen_snps_file_path)
     snps_dict = defaultdict(str)
     for index, row in snps_df.iterrows():
         # snps_dict[f"{row['CHR']}:{row['BP']}"] = row['A1']
-        snps_dict[f"{row['chromosome']}:{row['base_pair_location']}"] = row['effect_allele']
+        snps_dict[f"{row['CHR']}:{row['POS']}"] = row['A1']
     if len(sep) != 1:
         sep = codecs.decode(sep.encode('utf8'), 'unicode_escape')
     # 创建文件
@@ -99,17 +96,18 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
         count = 0
         start = time()
         with gzip.open(input_file_path, 'rt') as f:
-            if skip_rows + 1:
-                for _ in range(skip_rows):
-                    f.readline()
+            for _ in range(skip_rows + 1):
+                f.readline()
             for line in f:
                 columns = line.strip().split(sep)
                 filtered_columns = list((itemgetter(*filtered_columns_index)(columns)))
+                # attention:注意此处#CHROM可能是chr开头，也可能不是，需要修改代码
                 snp_id = f"{filtered_columns[0][3:]}:{filtered_columns[1]}"
                 if snps_dict[snp_id]:
                     count += 1
                 else:
                     continue
+                # attention:注意SNP数据位置可能不是在第一个，需要修改
                 regularized_columns = [regularize_rules[participant_column.split(':')[0]] for participant_column
                                        in filtered_columns[3:]]
                 if snps_dict[snp_id] != filtered_columns[2]:
@@ -117,8 +115,8 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
                 columns_file.write(f',{snp_id}')
                 for index, file in enumerate(participant_files):
                     file.write(f',{regularized_columns[index]}')
-                # 根据情况需要更改刷新文件的行数
-                if count % 10 == 0:
+                # attention:根据情况需要更改刷新文件的行数
+                if count % 1000 == 0:
                     columns_file.flush()
                     for file in participant_files:
                         file.flush()

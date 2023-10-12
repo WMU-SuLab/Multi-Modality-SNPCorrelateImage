@@ -15,17 +15,14 @@ __auth__ = 'diklios'
 
 import time
 
-import torch
 from .workflow import workflows
 
 
-def finish_train(device, net, data_loaders, writer, best_f1, best_model_wts, best_model_wts_path, since):
+def finish_train(device, net, data_loaders, writer, best_f1, best_model_wts, since):
     # 训练全部完成
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     print('Best val f1: {:4f}'.format(best_f1))
     # 加载最佳模型权重，最后做一次总的测试
     net.load_state_dict(best_model_wts)
-    # 保存最好的模型
-    torch.save(net.state_dict(), best_model_wts_path)
     workflows['test'](device, net, data_loaders['valid'], writer)

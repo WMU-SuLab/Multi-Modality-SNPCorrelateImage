@@ -20,7 +20,7 @@ import torch
 from sklearn.metrics import roc_curve
 from torch.utils.tensorboard import SummaryWriter
 
-from .metrics import count_metrics_binary_classification
+from utils.compute.metrics import count_metrics_binary_classification
 
 
 def experiments_record(
@@ -40,23 +40,25 @@ def experiments_record(
         f.write(f"save_interval: {save_interval}\n")
         f.write(f"log_interval: {log_interval}\n")
         f.write(f"remarks: {remarks}\n")
+        f.write(f"\n")
 
 
 def train_epoch_record(
         epoch_loss, all_metrics, net, optimizer, epoch, epochs, phase,
-        writer, log_interval, best_f1, best_model_wts, best_model_checkpoint_path, since):
+        writer, log_interval, best_f1, best_model_wts, best_model_wts_path, best_model_checkpoint_path, since):
     acc, mcc, precision, recall, f1, fpr, tpr, ks, sp, auc_score = all_metrics
     # 得到最好的模型，需要自己定义哪种情况下指标最好
     if phase == 'valid' and f1 > best_f1:
         best_f1 = f1
         best_model_wts = copy.deepcopy(net.state_dict())
-        state = {
+        # 保存最好的模型
+        torch.save(best_model_wts, best_model_wts_path)
+        torch.save({
             'epoch': epoch,
-            'state_dict': net.state_dict(),
-            'best_f1': best_f1,
+            'state_dict': best_model_wts,
+            'f1': best_f1,
             'optimizer': optimizer.state_dict()
-        }
-        torch.save(state, best_model_checkpoint_path)
+        }, best_model_checkpoint_path)
     # 记录
     if epoch % log_interval == 0:
         writer.add_scalars('Loss', {
@@ -96,11 +98,11 @@ def train_epoch_record(
     time_elapsed = time.time() - since
     print(
         f'Epoch {epoch + 1}/{epochs} | {phase} | Loss: {epoch_loss:.4f} | best F1: {best_f1}\n'
-        f'ACC: {acc:.4f} | MCC: {mcc:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f}\n'
+        f'ACC: {acc:.4f} | MCC: {mcc:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f} |\n'
         f'FPR: {fpr:.4f} | TPR: {tpr:.4f} | KS: {ks:.4f} | SP: {sp:.4f} | AUC: {auc_score:.4f}\n'
         f'Time: {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s'
     )
-    return best_f1, best_model_wts
+    return f1, best_f1, best_model_wts
 
 
 def test_metrics_record(y_true, y_pred, y_score, writer: SummaryWriter):
@@ -137,5 +139,5 @@ def test_metrics_record(y_true, y_pred, y_score, writer: SummaryWriter):
     writer.add_text('Test SP', str(sp))
     writer.add_text('Test AUC', str(auc_score))
     writer.flush()
-    print(f'Acc: {acc:.4f} | MCC:{mcc:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f}\n')
+    print(f'Acc: {acc:.4f} | MCC:{mcc:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f} |\n')
     print(f'FPR: {fpr:.4f} | TPR: {tpr:.4f} | KS: {ks:.4f} | SP: {sp:.4f} | AUC: {auc_score:.4f}\n')

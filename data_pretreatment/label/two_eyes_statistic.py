@@ -13,8 +13,11 @@
 """
 __auth__ = 'diklios'
 
+from datetime import datetime
+
 import pandas as pd
 
+datatime_now_str = datetime.now().strftime('%Y%m%d%H%M%S')
 df = pd.read_excel(r'D:\BaiduSyncdisk\Data\SuLabCohort\label\温医大学生结果导出-原始汇总0826.xlsx', sheet_name='Sheet1',
                    dtype={'学籍号': str})
 # print(df.head())
@@ -102,22 +105,31 @@ print(df.shape)
 # print(f"左眼眼轴长度大于23的人数:{df_high_myopia_strict[df_high_myopia_strict['AL_OS'] >= 23].shape[0]}")
 # print(f"右眼眼轴长度大于23的人数:{df_high_myopia_strict[df_high_myopia_strict['AL_OD'] >= 23].shape[0]}")
 # 最终筛选结果
-df_high_myopia = df[(((df['SE_OS'] <= -6) & (df['SE_OD'] <= -4)) | ((df['SE_OD'] <= -6) & (df['SE_OS'] <= -4)))
-                    & (df['AL_OS'] >= 24) & (df['AL_OD'] >= 24)].copy()
+# df_high_myopia = df[(((df['SE_OS'] <= -6) & (df['SE_OD'] <= -4)) | ((df['SE_OD'] <= -6) & (df['SE_OS'] <= -4)))
+#                     & (df['AL_OS'] >= 25) & (df['AL_OD'] >= 25)].copy()
+# df_high_myopia = df[(((df['SE_OS'] <= -6) & (df['SE_OD'] <= -4)) | ((df['SE_OD'] <= -6) & (df['SE_OS'] <= -4)))
+#                     & (df['AL_OS'] >= 26) & (df['AL_OD'] >= 26)].copy()
+df_high_myopia = df[((df['SE_OS'] <= -6) & (df['AL_OS'] >= 26)) | ((df['SE_OD'] <= -6) & (df['AL_OD'] >= 26))].copy()
 print(f'高度近视人数：{df_high_myopia.shape[0]}')
 df_high_myopia.to_csv(
-    r'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort\all_students_qc_two_eyes_high_myopia.csv',
+    rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort'
+    rf'\all_students_qc_two_eyes_high_myopia_{datatime_now_str}.csv',
     index=False)
 # 非高度近视
-df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) & (df['AL_OS'] <= 25) & (df['AL_OD'] <= 25)].copy()
+# df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) & (df['AL_OS'] <= 25) & (df['AL_OD'] <= 25)].copy()
+# df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) & (df['AL_OS'] <= 24) & (df['AL_OD'] <= 24)].copy()
+df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) &
+                        (df['SE_OS'] <= -0.5) & (df['SE_OD'] <= -0.5) &
+                        (df['AL_OS'] <= 24) & (df['AL_OD'] <= 24)].copy()
 print(f'非高度近视人数：{df_not_high_myopia.shape[0]}')
 df_not_high_myopia.to_csv(
-    r'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort'
-    r'\all_students_qc_two_eyes_not_high_myopia.csv',
+    rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort'
+    rf'\all_students_qc_two_eyes_not_high_myopia_{datatime_now_str}.csv',
     index=False)
 df_high_myopia['high_myopia'] = 1
 df_not_high_myopia['high_myopia'] = 0
 df_merge = pd.concat([df_high_myopia, df_not_high_myopia], axis=0, ignore_index=True)
 df_merge.to_csv(
-    r'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort\all_students_qc_two_eyes_merge.csv',
+    rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort'
+    rf'\all_students_qc_two_eyes_merge_{datatime_now_str}.csv',
     index=False)

@@ -14,3 +14,11 @@
 __auth__ = 'diklios'
 
 snp_info_columns = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
+regularize_rules = {
+    './.': 0,
+    '0/0': 0,
+    '0/1': 1,
+    '1/0': 1,
+    '1/1': 2,
+    '0/2': 2,
+}

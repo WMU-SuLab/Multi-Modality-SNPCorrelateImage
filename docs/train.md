@@ -43,6 +43,5 @@
     - 输入基因数据长度
     - 输入基因频率文件路径
 - 示例
-    - `python train.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230411103345/ 12275 --pretrain_image_feature_checkpoint_path /data/home/sunhj/Multi-Modality-SNPCorrelateImage/weights/convnext_tiny_1k_224_ema.pth`
-    - `python train.py /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230411170537/ 12275 --epochs 100 --batch_size 64`
     - `python train.py SNPImageNet /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230426211048 --snp_numbers 21213 --gene_freq_file_path /pub/sunhj/data/Multi-Modality-SNPCorrelateImage/divide/20230426211048/train/gene/freq.json --epochs 100 --batch_size 32` 
+    - `python .\train.py SNPImageNet F:\sunhj\Multi-Modality-SNPCorrelateImage\data\divide\20230626103943 --pretrain_image_feature_checkpoint_path .\weights\convnext_tiny_1k_224_ema.pth --snp_numbers 25190 --epochs 100 --batch_size 32`

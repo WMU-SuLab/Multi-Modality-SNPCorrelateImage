@@ -12,5 +12,7 @@
 
 - A Deep Generative–Discriminative Learning for Multimodal Representation in Imaging Genetics
     - 代码：<https://github.com/wko1014/ENGINE>
+- GenNet
+    - 代码：<https://github.com/ArnovanHilten/GenNet/>
 - ConvNeXt
     - 代码：<https://github.com/facebookresearch/ConvNeXt>

@@ -13,7 +13,8 @@
 """
 __auth__ = 'diklios'
 
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
+    matthews_corrcoef
 
 
 def count_metrics_binary_classification(y_true, y_pred, y_score):
@@ -33,7 +34,8 @@ def count_metrics_binary_classification(y_true, y_pred, y_score):
     # sp=tn / (tn+fp)
     acc = accuracy_score(y_true, y_pred)
     # acc = (tp + tn) / (tp + fn + tn + fp)
-    mcc = (tp * tn - fp * fn) / ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    # mcc = (tp * tn - fp * fn) / ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    mcc = matthews_corrcoef(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
     # p=tp / (tp + fp)
     recall = recall_score(y_true, y_pred)

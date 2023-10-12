@@ -23,18 +23,17 @@ import tqdm
 from torch.nn.parallel import DistributedDataParallel as ddp
 from torch.utils.tensorboard import SummaryWriter
 
-from base import project_dir_path, checkpoints_dir, weights_dir, logs_dir
+from base import records_dir, checkpoints_dir, weights_dir, logs_dir
 from divide_dataset import mk_dataset_paths
 from init import init_net, init_strategy
 from models import nets_fake_data
 from utils import setup_seed
 from utils.dir import mk_dir
 from utils.finish import finish_train
-from utils.metrics import count_metrics_binary_classification
 from utils.mk_data_loaders import mk_data_loaders_multi_funcs
 from utils.multi_gpus import init_distributed_mode, barrier, reduce_value, cleanup
 from utils.records import experiments_record, train_epoch_record
-from utils.time import datetime_now
+from utils.time import datetime_now_str
 from utils.workflow import workflows
 
 
@@ -55,6 +54,7 @@ from utils.workflow import workflows
 @click.option('--lr', default=1e-4, help='learning rate')
 @click.option('--step_size', default=10, help='step size')
 @click.option('--gamma', default=0.1, help='gamma')
+@click.option('--last_epoch', default=-1, help='last epoch')
 @click.option('--log_interval', default=1, help='save metrics interval')
 @click.option('--save_interval', default=10, help='save wts interval')
 @click.option('--pretrain_wts_path', default=None, help='pretrain weights path')
@@ -62,13 +62,13 @@ from utils.workflow import workflows
 @click.option('--use_early_stopping', default=True, help='if use early stopping')
 @click.option('--early_stopping_step', default=5, help='early stopping step')
 @click.option('--early_stopping_delta', default=0, help='early stopping delta')
-@click.option('--train_dir_prefix', default=datetime_now(), type=str, help='train dir prefix')
+@click.option('--train_dir_prefix', default=datetime_now_str(), type=str, help='train dir prefix')
 @click.option('--remarks', default=None, help='remarks')
 def main(
         rank, local_rank: int, world_size: int, dist_backend: str, seed: int,
         model_name: str, dataset_dir_path: str, snp_numbers: int,
         gene_freq_file_path: str, label_data_id_field_name: str, label_data_label_field_name: str,
-        epochs: int, batch_size: int, lr: float, step_size: int, gamma: float,
+        epochs: int, batch_size: int, lr: float, step_size: int, gamma: float, last_epoch: int,
         log_interval: int, save_interval: int,
         pretrain_wts_path: str, pretrain_image_feature_checkpoint_path: str,
         use_early_stopping: bool, early_stopping_step: int, early_stopping_delta: int,
@@ -115,18 +115,18 @@ def main(
     net = ddp(net, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
     # 初始化策略
     optimizer, scheduler, criterion, loss_early_stopping = init_strategy(
-        net, lr, step_size, gamma, early_stopping_step, early_stopping_delta)
+        net, lr, step_size, gamma, last_epoch, early_stopping_step, early_stopping_delta)
     # 对实验做一些参数记录
     if rank == 0:
         experiments_record(
-            os.path.join(project_dir_path, 'experiments_records.txt'),
+            os.path.join(records_dir, 'experiments_records.txt'),
             train_dir_prefix, model_name, dataset_dir_path, snp_numbers,
             epochs, batch_size, lr, step_size, criterion, gamma, save_interval, log_interval, remarks)
     # 创建权重和参数记录文件夹
-    model_checkpoint_dir = os.path.join(checkpoints_dir, train_dir_prefix)
+    model_checkpoints_dir = os.path.join(checkpoints_dir, train_dir_prefix)
     if rank == 0:
-        mk_dir(model_checkpoint_dir)
-    best_model_checkpoint_path = os.path.join(model_checkpoint_dir, 'best_model_checkpoint.pth')
+        mk_dir(model_checkpoints_dir)
+    best_model_checkpoints_path = os.path.join(model_checkpoints_dir, 'best_model_checkpoints.pth')
     # 创建权重记录文件夹
     model_wts_dir = os.path.join(weights_dir, train_dir_prefix)
     if rank == 0:
@@ -155,37 +155,26 @@ def main(
         # 训练一次、验证一次
         for phase in ['train', 'valid']:
             samplers[phase].set_epoch(epoch)
-            if phase == 'train':
-                # 训练
-                net.train()
-            else:
-                # 验证
-                net.eval()
             # 循环所有数据
             data_loader_iter = data_loaders[phase]
             if rank == 0:
                 data_loader_iter = tqdm.tqdm(data_loader_iter)
                 data_loader_iter.set_description(f'Epoch {epoch + 1}/{epochs}, running on {phase} dataset')
-            running_loss, y_true, y_pred, y_score = workflows[phase](
-                device, net, criterion, optimizer, data_loader_iter, phase, multi_gpu=True)
+            epoch_loss, all_metrics = workflows[phase](
+                device, net, criterion, optimizer, scheduler, data_loader_iter, data_loaders, phase, multi_gpu=True)
             torch.cuda.synchronize(device)
-            # 计算损失
-            epoch_loss = running_loss / len(data_loaders[phase].dataset)
-            # 计算指标
-            all_metrics = count_metrics_binary_classification(y_true, y_pred, y_score)
             all_metrics = torch.tensor(all_metrics).to(device)
             barrier()
             all_metrics = reduce_value(all_metrics)
             all_metrics = all_metrics.cpu().numpy().tolist()
             # 记录指标
             if rank == 0:
-                best_f1, best_model_wts = train_epoch_record(
+                f1,best_f1, best_model_wts = train_epoch_record(
                     epoch_loss, all_metrics, net, optimizer, epoch, epochs, phase,
-                    writer, log_interval, best_f1, best_model_wts, best_model_checkpoint_path, since)
+                    writer, log_interval, best_f1, best_model_wts, best_model_wts_path, best_model_checkpoints_path, since)
             # 判断是否早停
             if use_early_stopping and phase == 'valid':
                 loss_early_stopping(epoch_loss)
-        scheduler.step()
         if epoch % step_size == 0 and rank == 0:
             writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
         if epoch % save_interval == 0 and rank == 0:
@@ -193,13 +182,13 @@ def main(
             torch.save({
                 'epoch': epoch,
                 'model': net.state_dict(),
-                'best_f1': best_f1,
+                'f1': f1,
                 'optimizer': optimizer.state_dict()
-            }, os.path.join(model_checkpoint_dir, f'epoch_{epoch}_model_checkpoints.pth'))
+            }, os.path.join(model_checkpoints_dir, f'epoch_{epoch}_model_checkpoints.pth'))
         if use_early_stopping and loss_early_stopping.early_stop:
             break
     if rank == 0:
-        finish_train(device, net, data_loaders, writer, best_f1, best_model_wts, best_model_wts_path, since)
+        finish_train(device, net, data_loaders, writer, best_f1, best_model_wts, since)
         cleanup()
 
 

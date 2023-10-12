@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-@File Name      :   regularize.py
+@File Name      :   participants_regularize.py
 @Create Time    :   2022/11/30 20:33
 @Description    :   
 @Version        :   

@@ -17,7 +17,7 @@ import os
 
 import pandas as pd
 
-from .name import get_label_participant_id, get_gene_file_participant_id, \
+from .text_handler.name import get_label_participant_id, get_gene_file_participant_id, \
     get_image_file_participant_id_instance, get_image_file_participant_id
 
 

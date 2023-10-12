@@ -23,14 +23,17 @@ import pandas as pd
 @click.argument('input_file_path', type=click.Path(exists=True))
 @click.argument('dir_path', type=click.Path(exists=True))
 def main(input_file_path, dir_path):
-    df = pd.read_csv(input_file_path)
+    df = pd.read_csv(input_file_path, dtype={'学籍号': str, '条形码': str})
     replace_dict = {row['条形码']: row['学籍号'] for index, row in df.iterrows()}
     for filename in os.listdir(dir_path):
         sp = os.path.splitext(filename)
         replace_prefix = replace_dict.get(sp[0], None)
         if replace_prefix:
             new_filename = f"{replace_prefix}{','.join(sp[1:])}"
-            os.rename(os.path.join(dir_path, filename), os.path.join(dir_path, new_filename))
+            raw_file_path = os.path.join(dir_path, filename)
+            new_file_path = os.path.join(dir_path, new_filename)
+            if not os.path.exists(new_file_path):
+                os.rename(raw_file_path, new_file_path)
 
 
 if __name__ == '__main__':

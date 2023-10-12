@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-@File Name      :   transpose_split_with_threads.py
+@File Name      :   participants_transpose_split_with_threads.py
 @Create Time    :   2022/11/30 15:31
 @Description    :   
 @Version        :   

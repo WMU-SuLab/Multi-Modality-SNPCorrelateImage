@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-@File Name      :   fake.py
+@File Name      :   generate_fake_snp.py
 @Create Time    :   2023/2/23 21:26
 @Description    :   
 @Version        :   

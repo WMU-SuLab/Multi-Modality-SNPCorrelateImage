@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from divide_dataset import mk_dataset_paths
 from init import init_net
-from utils.mk_data_loaders import mk_data_loaders_funcs
+from utils.mk_data_loaders import mk_data_loaders_single_funcs
 from utils.workflow import workflows
 
 
@@ -34,7 +34,7 @@ def main(model_name: str, dataset_dir_path, wts_path, snp_numbers: int, log_dir,
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     net = init_net(device, model_name, snp_numbers, pretrain_wts_path=wts_path)
     data_paths = mk_dataset_paths(dataset_dir_path)
-    data_loaders = mk_data_loaders_funcs[model_name](data_paths, batch_size)
+    data_loaders = mk_data_loaders_single_funcs[model_name](data_paths, batch_size)
     writer = SummaryWriter(log_dir=log_dir)
     # 开始测试
     if len(data_loaders['test'].dataset) == 0:

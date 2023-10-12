@@ -19,9 +19,10 @@ import click
 
 from base import data_divide_dir
 from utils.dir import mk_dir
-from utils.name import get_label_participant_id, get_gene_file_participant_id, get_image_file_participant_id_instance
 from utils.participants import intersection_participants_ids_with_path
-from utils.time import datetime_now
+from utils.text_handler.name import get_label_participant_id, get_gene_file_participant_id, \
+    get_image_file_participant_id_instance
+from utils.time import datetime_now_str
 
 
 def train_test_ratio(train_ratio: int = 7, test_ratio: int = 3):
@@ -42,7 +43,7 @@ def train_valid_test_ratio(train_ratio: int = 5, valid_ratio: int = 1, test_rati
 def mk_dataset_root_dir_path(dataset_divide_dir: str = None) -> str:
     if not dataset_divide_dir:
         dataset_divide_dir = data_divide_dir
-    dataset_dir_path = os.path.join(dataset_divide_dir, datetime_now())
+    dataset_dir_path = os.path.join(dataset_divide_dir, datetime_now_str())
     mk_dir(dataset_dir_path)
     return dataset_dir_path
 
@@ -93,29 +94,29 @@ def mk_dataset_paths(dataset_dir_path: str):
     return paths
 
 
-def gene_data_mk_link(participant_ids: list, gene_data_dir_path: str, new_gene_data_dir_path: str):
+def gene_data_mk_link(participant_ids: list, raw_gene_data_dir_path: str, new_gene_data_dir_path: str):
     map(get_gene_file_participant_id, participant_ids)
     gene_data_file_names = [
         gene_data_file_name
-        for gene_data_file_name in os.listdir(gene_data_dir_path)
+        for gene_data_file_name in os.listdir(raw_gene_data_dir_path)
         if get_gene_file_participant_id(gene_data_file_name) in participant_ids
     ]
     for gene_data_file_name in gene_data_file_names:
         os.symlink(
-            os.path.join(gene_data_dir_path, gene_data_file_name),
+            os.path.join(raw_gene_data_dir_path, gene_data_file_name),
             os.path.join(new_gene_data_dir_path, gene_data_file_name)
         )
 
 
-def image_data_mk_link(participant_ids: list, image_data_dir_path: str, new_image_data_dir_path: str):
+def image_data_mk_link(participant_ids: list, raw_image_data_dir_path: str, new_image_data_dir_path: str):
     image_data_file_names = [
         image_data_file_name
-        for image_data_file_name in os.listdir(image_data_dir_path)
+        for image_data_file_name in os.listdir(raw_image_data_dir_path)
         if get_image_file_participant_id_instance(image_data_file_name) in participant_ids
     ]
     for image_data_file_name in image_data_file_names:
         os.symlink(
-            os.path.join(image_data_dir_path, image_data_file_name),
+            os.path.join(raw_image_data_dir_path, image_data_file_name),
             os.path.join(new_image_data_dir_path, image_data_file_name)
         )
 
@@ -123,9 +124,9 @@ def image_data_mk_link(participant_ids: list, image_data_dir_path: str, new_imag
 # 本模块的划分方法只适用于这个数据集，但是其他数据集可以借鉴这种思路
 @click.command()
 @click.argument('label_data_path', type=click.Path(exists=True, dir_okay=False))
-@click.option('--gene_data_dir_path', type=click.Path(exists=True, file_okay=False), default=None)
-@click.option('--image_data_dir_path', type=click.Path(exists=True, file_okay=False), default=None)
-@click.option('--dataset_divide_dir', type=click.Path(exists=True, file_okay=False), default=None)
+@click.option('--gene_data_dir_path', type=click.Path(exists=False, file_okay=False), default='')
+@click.option('--image_data_dir_path', type=click.Path(exists=False, file_okay=False), default='')
+@click.option('--dataset_divide_dir', type=click.Path(exists=True, file_okay=False), default='./data/divide')
 @click.option('--label_data_id_field_name', type=str, default='Participant ID')
 @click.option('--train_ratio', type=int, default=7)
 @click.option('--valid_ratio', type=int, default=3)
@@ -158,6 +159,24 @@ def train_valid_test_split(
         train_rate, valid_rate = train_valid_ratio(train_ratio, valid_ratio)
     else:
         raise ValueError('strategy error')
+    if os.path.exists(label_data_path):
+        label_data_path = os.path.abspath(label_data_path)
+    else:
+        raise ValueError(f'invalid {label_data_path}')
+    if gene_data_dir_path:
+        if os.path.exists(gene_data_dir_path):
+            gene_data_dir_path = os.path.abspath(gene_data_dir_path)
+        else:
+            raise ValueError(f'invalid {gene_data_dir_path}')
+    if image_data_dir_path:
+        if os.path.exists(image_data_dir_path):
+            image_data_dir_path = os.path.abspath(image_data_dir_path)
+        else:
+            raise ValueError(f'invalid {image_data_dir_path}')
+    if os.path.exists(dataset_divide_dir):
+        dataset_divide_dir = os.path.abspath(dataset_divide_dir)
+    else:
+        raise ValueError(f'invalid {dataset_divide_dir}')
     dataset_root_dir_path = mk_dataset_root_dir_path(dataset_divide_dir)
     data_paths = mk_dataset_paths(dataset_root_dir_path)
     # label data
@@ -195,13 +214,15 @@ def train_valid_test_split(
         f.write(f'label data path: {label_data_path}\n')
         f.write(f'gene data dir path: {gene_data_dir_path}\n')
         f.write(f'image data dir path: {image_data_dir_path}\n')
-        f.write(f'strategy: {strategy}\n')
+        f.write(f'dataset divide dir path:{dataset_divide_dir}\n')
+        f.write(f'label_data_id_field_name:{label_data_id_field_name}\n')
         f.write(f'train ratio: {train_ratio}\n')
         f.write(f'valid ratio: {valid_ratio}\n')
         f.write(f'test ratio: {test_ratio}\n')
-        f.write(f'train: {len(train_participant_ids)}\n')
-        f.write(f'valid: {len(valid_participant_ids)}\n')
-        f.write(f'test: {len(test_participant_ids)}\n')
+        f.write(f'strategy: {strategy}\n')
+        f.write(f'train num: {len(train_participant_ids)}\n')
+        f.write(f'valid num: {len(valid_participant_ids)}\n')
+        f.write(f'test num: {len(test_participant_ids)}\n')
 
 
 if __name__ == '__main__':

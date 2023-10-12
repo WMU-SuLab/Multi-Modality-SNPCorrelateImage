@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-@File Name      :   merge_participants.py
+@File Name      :   participants_merge.py
 @Create Time    :   2022/11/25 17:39
 @Description    :   
 @Version        :   
