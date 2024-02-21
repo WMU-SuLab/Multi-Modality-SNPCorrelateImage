@@ -14,41 +14,40 @@
 __auth__ = 'diklios'
 
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
-    matthews_corrcoef
+    matthews_corrcoef, roc_curve, auc
 
 
-def count_metrics_binary_classification(y_true, y_pred, y_score):
+def count_metrics_binary_classification(y_true: list, y_pred: list, y_score: list):
     """
     计算指标（二分类）
-    :param y_true:
-    :param y_pred:
-    :param y_score:
+    :param y_true: 真实值
+    :param y_pred: 预测值
+    :param y_score: 预测概率值
     :return:
     """
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     tpr = tp / (tp + fn)
     fpr = fp / (tn + fp)
     ks = abs(tpr - fpr)
-    # sn = tp / (tp + fn)
     sp = 1 - fpr
-    # sp=tn / (tn+fp)
-    acc = accuracy_score(y_true, y_pred)
-    # acc = (tp + tn) / (tp + fn + tn + fp)
-    # mcc = (tp * tn - fp * fn) / ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
-    mcc = matthews_corrcoef(y_true, y_pred)
-    precision = precision_score(y_true, y_pred)
-    # p=tp / (tp + fp)
-    recall = recall_score(y_true, y_pred)
-    # r=tp / (tp + fn)
-    f1 = f1_score(y_true, y_pred)
-    # f1 = 2 * precision * recall / (precision + recall)
-    # KS
-    # fpr, tpr, thresholds = roc_curve(y_true, y_score)
-    # ks = abs(fpr - tpr).max()
-    # auc_score = auc(fpr, tpr)
+    SP = tn / (tn + fp)
+    acc = (tp + tn) / (tp + fn + tn + fp)
+    ACC = accuracy_score(y_true, y_pred)
+    mcc = (tp * tn - fp * fn) / ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    MCC = matthews_corrcoef(y_true, y_pred)
+    precision = tp / (tp + fp)
+    Precision = precision_score(y_true, y_pred)
+    recall = tp / (tp + fn)
+    Recall = recall_score(y_true, y_pred)
+    f1 = 2 * precision * recall / (precision + recall)
+    F1 = f1_score(y_true, y_pred)
+    # ROC曲线
+    FPR, TPR, thresholds = roc_curve(y_true, y_score)
+    KS = abs(FPR - TPR).max()
+    AUC = auc(FPR, TPR)
     # 不绘制曲线可以直接用 roc_auc_score 函数计算AUC
     auc_score = roc_auc_score(y_true, y_score)
-    return acc, mcc, precision, recall, f1, fpr, tpr, ks, sp, auc_score
+    return locals()
 
 
 def count_metrics_multi_classification(y_true, y_pred, y_score):

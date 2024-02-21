@@ -43,13 +43,14 @@ def mk_data_loaders_multi(
         train_dataset_args: tuple, train_dataset_kwargs: dict,
         valid_dataset_args: tuple, valid_dataset_kwargs: dict,
         test_dataset_judge_args: tuple, test_dataset_args: tuple, test_dataset_kwargs: dict,
-        batch_size: int = 8, drop_last: bool = False, **kwargs):
+        batch_size: int = 8, drop_last: bool = True, **kwargs):
     train_dataset = dataset(*train_dataset_args, **train_dataset_kwargs)
     train_distributed_sampler = DistributedSampler(train_dataset, num_replicas=get_world_size(), rank=get_rank())
     train_batch_sampler = BatchSampler(train_distributed_sampler, batch_size=batch_size, drop_last=drop_last)
     train_data_loader = DataLoader(
         train_dataset, batch_sampler=train_batch_sampler,
         # num_workers=4, pin_memory=pin_memory,
+        **kwargs
     )
     valid_dataset = dataset(*valid_dataset_args, **valid_dataset_kwargs)
     valid_distributed_sampler = DistributedSampler(valid_dataset, num_replicas=get_world_size(), rank=get_rank())
@@ -57,6 +58,7 @@ def mk_data_loaders_multi(
     valid_data_loader = DataLoader(
         valid_dataset, batch_sampler=valid_batch_sampler,
         # num_workers=4, pin_memory=pin_memory,
+        **kwargs
     )
     data_loaders = {'train': train_data_loader, 'valid': valid_data_loader}
     samplers = {'train': train_distributed_sampler, 'valid': valid_distributed_sampler}
@@ -68,6 +70,7 @@ def mk_data_loaders_multi(
         test_data_loader = DataLoader(
             test_dataset, batch_sampler=test_batch_sampler,
             # num_workers=4, pin_memory=pin_memory,
+            **kwargs
         )
         data_loaders['test'] = test_data_loader
         samplers['test'] = test_distributed_sampler
@@ -88,7 +91,7 @@ class MkDataLoaders:
 class MkSNPNetDataLoaders(MkDataLoaders):
     def __call__(
             self, data_paths: dict, gene_freq_file_path: str = None,
-            batch_size: int = 8, drop_last: bool = False, shuffle: bool = True,
+            batch_size: int = 8, drop_last: bool = True, shuffle: bool = True,
             num_workers: int = 4, persistent_workers: bool = False,
             pin_memory: bool = False, pin_memory_device: str = '',
             **dataset_kwargs):
@@ -120,7 +123,7 @@ class MkSNPNetDataLoaders(MkDataLoaders):
 class MkBertSNPDataset(MkDataLoaders):
     def __call__(
             self, data_paths: dict, snp_number: int, tokenizer,
-            batch_size: int = 8, drop_last: bool = False, shuffle: bool = True,
+            batch_size: int = 8, drop_last: bool = True, shuffle: bool = True,
             num_workers: int = 4, persistent_workers: bool = False,
             pin_memory: bool = False, pin_memory_device: str = '',
             **dataset_kwargs):
@@ -152,7 +155,7 @@ class MkBertSNPDataset(MkDataLoaders):
 class MkImageNetDataLoaders(MkDataLoaders):
     def __call__(
             self, data_paths: dict,
-            batch_size: int = 8, drop_last: bool = False, shuffle: bool = True,
+            batch_size: int = 8, drop_last: bool = True, shuffle: bool = True,
             num_workers: int = 4, persistent_workers: bool = False,
             pin_memory: bool = False, pin_memory_device: str = '',
             **dataset_kwargs):
@@ -184,7 +187,7 @@ class MkImageNetDataLoaders(MkDataLoaders):
 class MkSNPImageNetDataLoaders(MkDataLoaders):
     def __call__(
             self, data_paths: dict, gene_freq_file_path: str = None,
-            batch_size: int = 8, drop_last: bool = False, shuffle: bool = True,
+            batch_size: int = 8, drop_last: bool = True, shuffle: bool = True,
             num_workers: int = 4, persistent_workers: bool = False,
             pin_memory: bool = False, pin_memory_device: str = '',
             **dataset_kwargs):

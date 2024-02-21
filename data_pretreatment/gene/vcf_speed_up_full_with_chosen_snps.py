@@ -100,7 +100,7 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
                 f.readline()
             for line in f:
                 columns = line.strip().split(sep)
-                filtered_columns = list((itemgetter(*filtered_columns_index)(columns)))
+                filtered_columns = list(itemgetter(*filtered_columns_index)(columns))
                 # attention:注意此处#CHROM可能是chr开头，也可能不是，需要修改代码
                 snp_id = f"{filtered_columns[0][3:]}:{filtered_columns[1]}"
                 if snps_dict[snp_id]:
@@ -111,7 +111,13 @@ def main(input_dir_path: str, output_dir_path: str, chosen_snps_file_path: str, 
                 regularized_columns = [regularize_rules[participant_column.split(':')[0]] for participant_column
                                        in filtered_columns[3:]]
                 if snps_dict[snp_id] != filtered_columns[2]:
-                    regularized_columns = [2 - regularized_column for regularized_column in regularized_columns]
+                    new_regularized_columns = []
+                    for regularized_column in regularized_columns:
+                        if regularized_column != -1:
+                            new_regularized_columns.append(2 - regularized_column)
+                        else:
+                            new_regularized_columns.append(-1)
+                    regularized_columns = new_regularized_columns
                 columns_file.write(f',{snp_id}')
                 for index, file in enumerate(participant_files):
                     file.write(f',{regularized_columns[index]}')

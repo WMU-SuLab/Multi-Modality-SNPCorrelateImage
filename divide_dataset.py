@@ -45,6 +45,7 @@ def mk_dataset_root_dir_path(dataset_divide_dir: str = None) -> str:
         dataset_divide_dir = data_divide_dir
     dataset_dir_path = os.path.join(dataset_divide_dir, datetime_now_str())
     mk_dir(dataset_dir_path)
+    print(f'dataset_dir_path: {dataset_dir_path}')
     return dataset_dir_path
 
 
@@ -129,8 +130,8 @@ def image_data_mk_link(participant_ids: list, raw_image_data_dir_path: str, new_
 @click.option('--dataset_divide_dir', type=click.Path(exists=True, file_okay=False), default='./data/divide')
 @click.option('--label_data_id_field_name', type=str, default='Participant ID')
 @click.option('--train_ratio', type=int, default=7)
-@click.option('--valid_ratio', type=int, default=3)
-@click.option('--test_ratio', type=int, default=0)
+@click.option('--valid_ratio', type=int, default=2)
+@click.option('--test_ratio', type=int, default=1)
 @click.option('--strategy', type=click.Choice(['combination', 'separateness', 'train_valid']), default='train_valid')
 def train_valid_test_split(
         label_data_path: str, gene_data_dir_path: str, image_data_dir_path: str,

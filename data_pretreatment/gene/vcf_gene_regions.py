@@ -29,10 +29,16 @@ import pandas as pd
 @click.command()
 @click.argument('gene_region_file_path', type=click.Path(exists=True))
 @click.argument('vcf_dir_path', type=click.Path(exists=True))
-def main(gene_region_file_path, vcf_dir_path):
+@click.option('--except_file_path', type=click.Path(exists=True))
+def main(gene_region_file_path, vcf_dir_path, except_file_path):
     gene_region_file_path = os.path.abspath(gene_region_file_path)
     gene_region_file_dir_path = os.path.dirname(gene_region_file_path)
     gene_region_file_name = os.path.basename(gene_region_file_path)
+    if except_file_path:
+        with open(except_file_path, 'r')as f:
+            except_file_list = f.read().split('\n')
+    else:
+        except_file_list = []
     df = pd.read_csv(gene_region_file_path, sep='\t', header=None)
     df = df[[0, 2, 3, 4, 8]]
     gene_regions = defaultdict(dict)
@@ -48,10 +54,13 @@ def main(gene_region_file_path, vcf_dir_path):
             if not search:
                 continue
             gene_name = search.group(1)
+            if gene_name in except_file_list:
+                continue
             gene_regions[chromosome][f'{start}_{end}'] = gene_name
             gene_regions_chromosome[chromosome].append((start, end))
     with open(os.path.join(gene_region_file_dir_path, f'{gene_region_file_name}.gene_regions.json'), 'w') as f:
         json.dump(gene_regions, f)
+        # 注意需要删除 C6orf165 这种小鼠的小写后重复了的基因名
     for item in gene_regions_chromosome.values():
         item.sort()
     gene_regions_chromosome_df = {gene: pd.DataFrame(region, columns=['start', 'end']) for gene, region in

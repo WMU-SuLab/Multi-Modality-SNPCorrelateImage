@@ -16,10 +16,11 @@ __auth__ = 'diklios'
 
 import json
 import os
-import tqdm
+
 import click
 import numpy as np
 import pandas as pd
+import tqdm
 
 
 @click.command()
@@ -48,8 +49,13 @@ def main(input_selected_gene_file_path, input_data_dir_path, output_dir_path, th
         effective_genes = all_genes[effective_genes_rule]
         print(f'effective_genes: {len(effective_genes)}')
         effective_delta_losses = delta_losses[effective_genes_rule]
+        # 不需要排序，如果排序的话，effective_genes 也需要排序
+        # effective_delta_losses = np.sort(effective_delta_losses)
         percentile = np.percentile(effective_delta_losses, threshold)
+        print(f'percentile: {percentile}')
         selected_genes = effective_genes[effective_delta_losses <= percentile]
+        selected_delta_losses = effective_delta_losses[effective_delta_losses <= percentile]
+        print(f'max delta losses:{np.max(selected_delta_losses)}')
     else:
         raise ValueError('input_selected_gene_file_path must be .csv, .txt or .json')
     print(f'selected_genes: {len(selected_genes)}')
@@ -77,15 +83,17 @@ def main(input_selected_gene_file_path, input_data_dir_path, output_dir_path, th
         participant_files = {participant_id: open(os.path.join(output_dir_path, f'{participant_id}.csv'), 'w')
                              for participant_id in participant_ids}
         for participant_id, participant_file in participant_files.items():
-            participant_file.write(f'{participant_id},')
+            participant_file.write(f'{participant_id}')
         with open(os.path.join(output_dir_path, f'columns.csv'), 'w') as column_file:
-            column_file.write('participant_id,')
+            column_file.write('participant_id')
             for selected_genes_file_name in tqdm.tqdm(selected_genes_file_names):
                 gene_df = pd.read_csv(os.path.join(input_data_dir_path, selected_genes_file_name), dtype=str)
                 snp_ids = gene_df['snp_id'].drop_duplicates().tolist()
+                column_file.write(',')
                 column_file.write(','.join(snp_ids))
                 for participant_id, participant_group in gene_df.groupby('participant_id'):
                     participant_file = participant_files[participant_id]
+                    participant_file.write(',')
                     participant_file.write(','.join(participant_group['val'].astype(str).tolist()))
         for participant_file in participant_files.values():
             participant_file.close()
@@ -97,8 +105,6 @@ if __name__ == '__main__':
     python data_pretreatment/gene/participants_gene_regions_filter_snps_with_selected_gene.py \
     work_dirs/data/gene/students_snps_all_frequency_0.005/gene_regions/group_wise_importance_score.json \
     work_dirs/data/gene/students_snps_all_frequency_0.005/gene_regions \
-    work_dirs/data/gene/students_snps_all_frequency_0.005/selected_gene_threshold_2 --threshold 2
-    
-    
+    work_dirs/data/gene/students_snps_all_frequency_0.005/selected_gene_threshold_5 --threshold 5
     """
     main()

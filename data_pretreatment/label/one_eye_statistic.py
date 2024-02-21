@@ -32,13 +32,15 @@ high_myopia_OD_df.to_csv(
     rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort\all_students_qc_one_eye_high_myopia_OD_{datatime_now_str}.csv',
     index=False)
 # not_high_myopia_OS_df = df[(-3 <= df['SE_OS']) & (df['SE_OS'] <= -0.5)]
-not_high_myopia_OS_df = df[(-3 <= df['SE_OS']) & (df['SE_OS'] <= -0.5) & (df['AL_OS'] <= 24)]
+# not_high_myopia_OS_df = df[(-3 <= df['SE_OS']) & (df['SE_OS'] <= -0.5) & (df['AL_OS'] <= 24)]
+not_high_myopia_OS_df = df[(-3 <= df['SE_OS']) & (df['SE_OS'] <= -0.5) & (df['AL_OS'] <= 25)]
 print(not_high_myopia_OS_df.shape)
 not_high_myopia_OS_df.to_csv(
     rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort\all_students_qc_one_eye_not_high_myopia_OS_{datatime_now_str}.csv',
     index=False)
 # not_high_myopia_OD_df = df[(-3 <= df['SE_OD']) & (df['SE_OD'] <= -0.5)]
-not_high_myopia_OD_df = df[(-3 <= df['SE_OD']) & (df['SE_OD'] <= -0.5) & (df['AL_OD'] <= 24)]
+# not_high_myopia_OD_df = df[(-3 <= df['SE_OD']) & (df['SE_OD'] <= -0.5) & (df['AL_OD'] <= 24)]
+not_high_myopia_OD_df = df[(-3 <= df['SE_OD']) & (df['SE_OD'] <= -0.5) & (df['AL_OD'] <= 25)]
 print(not_high_myopia_OD_df.shape)
 not_high_myopia_OD_df.to_csv(
     rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort\all_students_qc_one_eye_not_high_myopia_OD_{datatime_now_str}.csv',

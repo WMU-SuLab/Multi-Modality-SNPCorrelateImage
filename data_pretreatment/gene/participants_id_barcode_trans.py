@@ -25,15 +25,19 @@ import pandas as pd
 def main(input_file_path, dir_path):
     df = pd.read_csv(input_file_path, dtype={'学籍号': str, '条形码': str})
     replace_dict = {row['条形码']: row['学籍号'] for index, row in df.iterrows()}
+    print(f"共有{df.shape[0]}条数据")
+    count = 0
     for filename in os.listdir(dir_path):
         sp = os.path.splitext(filename)
         replace_prefix = replace_dict.get(sp[0], None)
         if replace_prefix:
+            count += 1
             new_filename = f"{replace_prefix}{','.join(sp[1:])}"
             raw_file_path = os.path.join(dir_path, filename)
             new_file_path = os.path.join(dir_path, new_filename)
             if not os.path.exists(new_file_path):
                 os.rename(raw_file_path, new_file_path)
+    print(f"共替换{count}个条形码")
 
 
 if __name__ == '__main__':

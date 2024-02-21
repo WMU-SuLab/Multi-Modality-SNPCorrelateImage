@@ -25,11 +25,11 @@ import pandas as pd
 import torch
 import tqdm
 from sklearn.model_selection import train_test_split
+from tensorboardX import SummaryWriter
 from torch import nn, optim
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from torch.utils.tensorboard import SummaryWriter
 
-from base import work_dirs_dir, checkpoints_dir_name, weights_dir_name, logs_dir_name
+from base import work_dirs_dir, checkpoints_dir_name, logs_dir_name
 from utils import setup_seed
 from utils.compute.metrics import count_metrics_binary_classification
 from utils.dir import mk_dir
@@ -61,15 +61,13 @@ class GeneNet(nn.Module):
         super().__init__()
         self.snp_number = snp_number
         self.gene_mlp = nn.Sequential(
-            nn.Linear(snp_number, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(snp_number, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 16),
-            nn.BatchNorm1d(16),
+            nn.Linear(32, 8),
+            nn.BatchNorm1d(8),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(16, 1),
+            nn.Linear(8, 1),
         )
 
     def forward(self, snps):
@@ -84,16 +82,21 @@ class GeneNet(nn.Module):
 @click.option('--label_data_id_field_name', type=str, default='学籍号')
 @click.option('--label_data_label_field_name', type=str, default='high_myopia')
 @click.option('--train_dir_prefix', type=str, default='')
+@click.option('--output_dir_path', type=click.Path(), default=os.getcwd())
 def main(
         gene_regions_info_file_path, data_dir_path, label_file_path,
-        label_data_id_field_name, label_data_label_field_name, train_dir_prefix
+        label_data_id_field_name, label_data_label_field_name, train_dir_prefix,
+        output_dir_path
 ):
+    if not os.path.exists(output_dir_path) or not os.path.isdir(output_dir_path):
+        os.makedirs(output_dir_path)
     gene_region_file_names = [file_name for file_name in os.listdir(data_dir_path) if file_name.endswith('.csv')]
     gene_participant_ids = pd.read_csv(os.path.join(data_dir_path, gene_region_file_names[0]), dtype=str)[
         'participant_id'].tolist()
     label_df = pd.read_csv(label_file_path, dtype={label_data_id_field_name: str})
     label_participant_ids = label_df[label_data_id_field_name].tolist()
     participant_ids = list(set(gene_participant_ids) & set(label_participant_ids))
+    print(f'ids len:{len(participant_ids)}')
     label_df = label_df[label_df[label_data_id_field_name].isin(participant_ids)]
 
     train_valid_participant_ids, test_participant_ids = train_test_split(participant_ids, random_state=2023,
@@ -144,9 +147,6 @@ def main(
             checkpoints_dir = os.path.join(records_dir, checkpoints_dir_name, gene_name)
             mk_dir(checkpoints_dir)
             best_model_checkpoint_path = os.path.join(checkpoints_dir, 'best_model_checkpoint.pth')
-            wts_dir = os.path.join(records_dir, weights_dir_name, gene_name)
-            mk_dir(wts_dir)
-            best_model_wts_path = os.path.join(wts_dir, 'best_model_wts.pth')
             writer = SummaryWriter(log_dir=os.path.join(records_dir, logs_dir_name, gene_name))
             writer.add_graph(net, torch.randn(1, length).to(device))
             # 读取数据
@@ -195,20 +195,17 @@ def main(
                         if phase == 'train':
                             loss.backward()
                             optimizer.step()
-                            scheduler.step()
                         running_loss += loss.item()
                     # 计算损失
                     epoch_loss = running_loss / len(data_loader[phase].dataset)
                     # 计算指标
                     all_metrics = count_metrics_binary_classification(y_true, y_pred, y_score)
-                    acc, mcc, precision, recall, f1, fpr, tpr, ks, sp, auc_score = all_metrics
                     # 得到最好的模型，需要自己定义哪种情况下指标最好
-                    if phase == 'valid' and f1 > best_f1:
-                        best_f1 = f1
-                        torch.save(net.state_dict(), best_model_wts_path)
+                    if phase == 'valid' and all_metrics['f1'] > best_f1:
+                        best_f1 = all_metrics['f1']
                         state = {
                             'epoch': epoch,
-                            'state_dict': net.state_dict(),
+                            'model': net.state_dict(),
                             'best_f1': best_f1,
                             'optimizer': optimizer.state_dict()
                         }
@@ -218,44 +215,44 @@ def main(
                         writer.add_scalars('Loss', {
                             phase: epoch_loss,
                         }, epoch)
-                        writer.add_scalars('ACC', {
-                            phase: acc,
+                        writer.add_scalars('acc', {
+                            phase: all_metrics['acc'],
                         }, epoch)
-                        writer.add_scalars('MCC', {
-                            phase: mcc,
+                        writer.add_scalars('mcc', {
+                            phase: all_metrics['mcc'],
                         }, epoch)
-                        writer.add_scalars('Precision', {
-                            phase: precision,
+                        writer.add_scalars('precision', {
+                            phase: all_metrics['precision'],
                         }, epoch)
-                        writer.add_scalars('Recall', {
-                            phase: recall,
+                        writer.add_scalars('recall', {
+                            phase: all_metrics['recall'],
+                        })
+                        writer.add_scalars('f1', {
+                            phase: all_metrics['f1'],
+                        })
+                        writer.add_scalars('tpr', {
+                            phase: all_metrics['tpr'],
+                        })
+                        writer.add_scalars('fpr', {
+                            phase: all_metrics['fpr'],
+                        })
+                        writer.add_scalars('ks', {
+                            phase: all_metrics['ks'],
                         }, epoch)
-                        writer.add_scalars('F1', {
-                            phase: f1,
+                        writer.add_scalars('sp', {
+                            phase: all_metrics['sp'],
                         }, epoch)
-                        writer.add_scalars('FPR', {
-                            phase: fpr,
-                        }, epoch)
-                        writer.add_scalars('TPR', {
-                            phase: tpr,
-                        }, epoch)
-                        writer.add_scalars('KS', {
-                            phase: ks,
-                        }, epoch)
-                        writer.add_scalars('SP', {
-                            phase: sp,
-                        }, epoch)
-                        writer.add_scalars('AUC', {
-                            phase: auc_score,
+                        writer.add_scalars('auc', {
+                            phase: all_metrics['auc_score'],
                         }, epoch)
                         writer.flush()
                         # 判断是否早停
                     if use_early_stopping and phase == 'valid':
                         loss_early_stopping(epoch_loss)
+                scheduler.step()
                 if epoch % step_size == 0:
                     writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
                 if epoch % save_interval == 0:
-                    torch.save(net.state_dict(), os.path.join(wts_dir, f'epoch_{epoch}_model_wts.pth'))
                     torch.save({
                         'epoch': epoch,
                         'model': net.state_dict(),
@@ -289,16 +286,20 @@ def main(
         # random.seed()
         # 计算group-wise importance score
         k_random_times = 1000
+        # 记录所有的随机损失，非常占用内存
+        # fake_losses = []
         delta_losses = []
+        delta_losses2 = []
         all_genes = []
         for gene_name in tqdm.tqdm(gene_regions_info['gene_names']):
             net = nets[gene_name]
             net.to(device)
-            wts_dir = os.path.join(records_dir, weights_dir_name, gene_name)
-            best_model_wts_path = os.path.join(wts_dir, 'best_model_wts.pth')
-            if not os.path.exists(best_model_wts_path):
+            checkpoints_dir = os.path.join(records_dir, checkpoints_dir_name, gene_name)
+            best_model_checkpoint_path = os.path.join(checkpoints_dir, 'best_model_checkpoint.pth')
+            if not os.path.exists(best_model_checkpoint_path):
+                print(f'{gene_name} best_model_checkpoint_path not exists')
                 continue
-            net.load_state_dict(torch.load(best_model_wts_path), strict=False)
+            net.load_state_dict(torch.load(best_model_checkpoint_path)['model'], strict=False)
             test_criterion = nn.BCEWithLogitsLoss(reduction='none')
 
             gene_df = pd.read_csv(os.path.join(data_dir_path, f'{gene_name}.csv'), dtype=str)
@@ -323,54 +324,63 @@ def main(
                 y_outputs += new_outputs.reshape(-1).tolist()
                 loss = test_criterion(new_outputs, labels.float()).clone().tolist()
                 true_losses += loss
-
-            # 错误的写法
-            # true_losses = np.array(true_losses)
-            # k_fake_losses = []
-            # for k in range(k_random_times):
-            #     y_outputs_copy = copy.deepcopy(y_outputs)
-            #     random.shuffle(y_outputs_copy)
-            #     # fake_losses = [
-            #     #     test_criterion(torch.tensor(outputs, dtype=torch.float), torch.tensor(labels, dtype=torch.float)).item()
-            #     #     for outputs, labels in zip(y_outputs_copy, y_true)]
-            #     fake_losses = test_criterion(torch.tensor(y_outputs_copy, dtype=torch.float),
-            #                                  torch.tensor(y_true, dtype=torch.float)).clone().numpy()
-            #     k_fake_losses.append(np.sum(true_losses - fake_losses))
-            # delta_loss1 = sum(k_fake_losses) / k_random_times
-            # delta_losses1.append(float(delta_loss1))
+            true_losses = [i[0] for i in true_losses]
 
             e_fake_losses = [[] for i in range(test_participant_ids_len)]
             for k in range(k_random_times):
                 y_outputs_copy = copy.deepcopy(y_outputs)
                 random.shuffle(y_outputs_copy)
-                # fake_losses = [
-                #     test_criterion(torch.tensor(outputs, dtype=torch.float), torch.tensor(labels, dtype=torch.float)).item()
+                # random_losses = [
+                #     test_criterion(torch.tensor(outputs, dtype=torch.float),
+                #                    torch.tensor(labels, dtype=torch.float)).item()
                 #     for outputs, labels in zip(y_outputs_copy, y_true)]
-                fake_losses = test_criterion(torch.tensor(y_outputs_copy, dtype=torch.float),
-                                             torch.tensor(y_true, dtype=torch.float)).clone().numpy()
+                random_losses = test_criterion(torch.tensor(y_outputs_copy, dtype=torch.float),
+                                               torch.tensor(y_true, dtype=torch.float)).clone().tolist()
                 for i in range(test_participant_ids_len):
-                    e_fake_losses[i].append(fake_losses[i])
-            e_fake_losses = [sum(e_fake_losses[i]) / k_random_times for i in range(test_participant_ids_len)]
-            delta_loss = sum([true_losses[i] - e_fake_losses[i] for i in range(test_participant_ids_len)])
-
+                    e_fake_losses[i].append(random_losses[i])
+            # fake_losses.append(e_fake_losses)
+            e_fake_loss = [sum(e_fake_losses[i]) / k_random_times for i in range(test_participant_ids_len)]
+            delta_loss = sum([true_losses[i] - e_fake_loss[i] for i in range(test_participant_ids_len)])
             delta_losses.append(float(delta_loss))
-            all_genes.append(gene_name)
 
-        selected_genes_save_file_path = os.path.join(data_dir_path, 'group_wise_importance_score.json')
-        with open(selected_genes_save_file_path, 'w') as w:
-            print(selected_genes_save_file_path)
+            # 另一种写法，同时使用会因为随机的数组不同导致最后结果有略微的差异，但是大体不影响，偏差值大概在0.01左右
+            true_losses = np.array(true_losses)
+            k_fake_losses = []
+            for k in range(k_random_times):
+                y_outputs_copy = copy.deepcopy(y_outputs)
+                random.shuffle(y_outputs_copy)
+                random_losses = test_criterion(torch.tensor(y_outputs_copy, dtype=torch.float),
+                                               torch.tensor(y_true, dtype=torch.float)).clone().numpy()
+                k_fake_losses.append(np.sum(true_losses - random_losses))
+            delta_loss2 = sum(k_fake_losses) / k_random_times
+            delta_losses2.append(float(delta_loss2))
+
+            all_genes.append(gene_name)
+        gwis_file_path = os.path.join(output_dir_path, 'gwis.json')
+        with open(gwis_file_path, 'w') as w:
+            print(f'group-wise importance score is saved to {gwis_file_path}')
             json.dump({
+                # "fake_losses": fake_losses,
                 "delta_losses": delta_losses,
+                "delta_losses2": delta_losses2,
                 "all_genes": all_genes
             }, w)
 
 
 if __name__ == '__main__':
     """
+    训练
     group wise importance score
     python gwis.py work_dirs/data/gene/students_snps_all_frequency_0.001/gene_regions/gene_regions_info.json \
     work_dirs/data/gene/students_snps_all_frequency_0.001/gene_regions/ \
     work_dirs/data/label/all_students_qc_two_eyes_merge_20230919183434.csv
+    
+    测试
+    python gwis.py work_dirs/data/gene/students_snps_all_frequency_0.05/gene_regions/gene_regions_info.json \
+    work_dirs/data/gene/students_snps_all_frequency_0.05/gene_regions/ \
+    work_dirs/data/label/all_students_qc_two_eyes_merge_20230919183434.csv \
+    --train_dir_prefix 20231213144941 \
+    --output_dir_path work_dirs/data/gene/students_snps_all_frequency_0.05/label_20230919183434/
     """
     # data_dir_path = '/pub/data/sunhj/Multi-Modality-SNPCorrelateImage/data/gene/students_gene_regions_snps/gene_regions'
     # gene_regions_info_file_path = "/pub/data/sunhj/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf/all_gene_regions_info.json"

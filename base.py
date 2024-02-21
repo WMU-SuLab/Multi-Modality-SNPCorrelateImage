@@ -28,12 +28,14 @@ data_divide_dir = os.path.join(work_dirs_dir, data_divide_dir_name)
 
 records_dir_name = 'records'
 records_dir = os.path.join(work_dirs_dir, records_dir_name)
-weights_dir_name = 'weights'
-weights_dir = os.path.join(records_dir, weights_dir_name)
+# weights_dir_name = 'weights'
+# weights_dir = os.path.join(records_dir, weights_dir_name)
 checkpoints_dir_name = 'checkpoints'
 checkpoints_dir = os.path.join(records_dir, checkpoints_dir_name)
 logs_dir_name = 'logs'
 logs_dir = os.path.join(records_dir, logs_dir_name)
+code_dir_name = 'code'
+code_dir = os.path.join(records_dir, code_dir_name)
 
 outputs_dir_name = 'outputs'
 outputs_dir = os.path.join(work_dirs_dir, outputs_dir_name)
@@ -50,7 +52,7 @@ root_dir_paths = [
     # records 文件夹，用于存放所有训练的记录
     records_dir,
     # weights 文件夹，用于存放模型的各项权重，一般用于预训练模型
-    weights_dir,
+    # weights_dir,
     # checkpoints 文件夹，用于存放模型的各项参数文件，除了weights可能还有指标、轮数等等
     checkpoints_dir,
     # tensorboard 日志文件夹

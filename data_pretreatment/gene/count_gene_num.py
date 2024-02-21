@@ -26,4 +26,8 @@ def main(input_gene_file_path: str):
 
 
 if __name__ == '__main__':
+    """
+    示例：python data_pretreatment/gene/count_gene_num.py \
+    work_dirs/data/gene/students_snps_all_frequency_0.001/label_20230919183434/selected_genes_percentile_30/columns.csv
+    """
     main()

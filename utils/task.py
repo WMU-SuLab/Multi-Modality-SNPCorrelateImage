@@ -43,13 +43,13 @@ def multi_classification_task(outputs, labels, model_with_softmax=False, criteri
                               criterion_with_softmax=True):
     if model_with_softmax:
         predicts_value, predicts_index = torch.max(outputs, dim=-1)
-        y_pred = predicts_index.tolist()
-        y_score = outputs
+        y_pred = predicts_index.reshape(-1).tolist()
+        y_score = predicts_value.reshape(-1).tolist()
     else:
-        new_outputs = torch.softmax(outputs, dim=-1)
-        predicts_value, predicts_index = torch.max(new_outputs, dim=-1)
-        y_pred = predicts_index.tolist()
-        y_score = outputs
+        softmax = torch.softmax(outputs, dim=-1)
+        predicts_value, predicts_index = torch.max(softmax, dim=-1)
+        y_pred = predicts_index.reshape(-1).tolist()
+        y_score = predicts_value.reshape(-1).tolist()
     if criterion:
         if criterion_with_softmax and not model_with_softmax:
             loss = criterion(outputs, labels)

@@ -16,14 +16,18 @@ __auth__ = 'diklios'
 import os
 from shutil import rmtree
 
-from base import logs_dir, weights_dir, checkpoints_dir
+from base import logs_dir,  checkpoints_dir,code_dir
 
-weights_dirs = os.listdir(weights_dir)
+# weights_dirs = os.listdir(weights_dir)
 checkpoints_dirs = os.listdir(checkpoints_dir)
 logs_dirs = os.listdir(logs_dir)
-for dir_name in os.listdir(weights_dir):
-    if dir_name not in logs_dirs:
-        rmtree(os.path.join(weights_dir, dir_name), ignore_errors=True)
+code_dirs = os.listdir(code_dir)
+# for dir_name in os.listdir(weights_dir):
+#     if dir_name not in logs_dirs:
+#         rmtree(os.path.join(weights_dir, dir_name), ignore_errors=True)
 for dir_name in os.listdir(checkpoints_dir):
     if dir_name not in logs_dirs:
         rmtree(os.path.join(checkpoints_dir, dir_name), ignore_errors=True)
+for dir_name in os.listdir(code_dir):
+    if dir_name not in logs_dirs:
+        rmtree(os.path.join(code_dir, dir_name), ignore_errors=True)

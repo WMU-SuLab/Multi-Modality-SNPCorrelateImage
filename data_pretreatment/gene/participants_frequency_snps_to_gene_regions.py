@@ -74,7 +74,16 @@ def main(snps_gene_regions_file_path, input_snps_dir_path, output_dir_path):
 
 if __name__ == '__main__':
     """
-    从已经过滤的snps数据中直接制作gene_regions结构的文件，而不经过vcf_gene_regions.py、vcf_filter_snps_with_gene_regions.py、
-    participants_gene_regions_filter_with_chosen_snps.py、participants_gene_regions_snps_divide.py这四部流程
+    从已经过滤的snps数据中直接制作gene_regions结构的文件，而不经过
+    vcf_gene_regions.py，
+    vcf_filter_snps_with_gene_regions.py，
+    participants_gene_regions_filter_with_chosen_snps.py，
+    participants_gene_regions_snps_divide.py
+    这四步流程
+    
+    示例：python data_pretreatment/gene/participants_frequency_snps_to_gene_regions.py \
+    work_dirs/data/gene/filtered_alleles_vcf/all_snps_gene_regions.json \
+    work_dirs/data/gene/students_snps_all_frequency_0.001/ \
+    work_dirs/data/gene/students_snps_all_frequency_0.001/gene_regions
     """
     main()

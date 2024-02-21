@@ -95,7 +95,7 @@ def main(output_dir_path: str, input_file_path: str, input_dir_path: str,
             for line in f:
                 count += 1
                 columns = line.strip().split(sep)
-                filtered_columns = list((itemgetter(*filtered_columns_index)(columns)))
+                filtered_columns = list(itemgetter(*filtered_columns_index)(columns))
                 if regularize:
                     # 注意这里的filtered_columns的索引要和filtered_columns前面有多少列对应
                     regularized_columns = [regularize_rules[participant_column.split(':')[0]] for participant_column in
@@ -122,5 +122,6 @@ def main(output_dir_path: str, input_file_path: str, input_dir_path: str,
 if __name__ == '__main__':
     """
     需要注意更改是否是压缩文件，是否使用gzip模块
+    
     """
     main()

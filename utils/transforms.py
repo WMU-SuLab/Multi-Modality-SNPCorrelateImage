@@ -17,7 +17,8 @@ from torchvision import transforms
 
 base_image_transforms = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
 ])
 
 gene_image_transforms = {
@@ -25,6 +26,7 @@ gene_image_transforms = {
     'train': transforms.Compose([
         # 一般先resize，大多数是256*256
         transforms.Resize(256),
+        # transforms.Resize((224, 224)),
         # 从中心开始裁剪，裁剪出224x224的图片（VGG、ResNet等都是224x224）
         transforms.CenterCrop(224),
         # 也可以使用随机裁剪，得到的种类更多
@@ -49,6 +51,7 @@ gene_image_transforms = {
 
     ]),
     'valid': transforms.Compose([
+        # transforms.Resize((224, 224)),
         transforms.Resize(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
@@ -56,6 +59,7 @@ gene_image_transforms = {
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]),
     'test': transforms.Compose([
+        # transforms.Resize((224, 224)),
         transforms.Resize(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),

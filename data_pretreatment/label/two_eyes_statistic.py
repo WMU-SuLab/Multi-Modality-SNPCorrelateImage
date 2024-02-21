@@ -118,9 +118,12 @@ df_high_myopia.to_csv(
 # 非高度近视
 # df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) & (df['AL_OS'] <= 25) & (df['AL_OD'] <= 25)].copy()
 # df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) & (df['AL_OS'] <= 24) & (df['AL_OD'] <= 24)].copy()
+# df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) &
+#                         (df['SE_OS'] <= -0.5) & (df['SE_OD'] <= -0.5) &
+#                         (df['AL_OS'] <= 24) & (df['AL_OD'] <= 24)].copy()
 df_not_high_myopia = df[(df['SE_OS'] >= -3) & (df['SE_OD'] >= -3) &
                         (df['SE_OS'] <= -0.5) & (df['SE_OD'] <= -0.5) &
-                        (df['AL_OS'] <= 24) & (df['AL_OD'] <= 24)].copy()
+                        (df['AL_OS'] <= 25) & (df['AL_OD'] <= 25)].copy()
 print(f'非高度近视人数：{df_not_high_myopia.shape[0]}')
 df_not_high_myopia.to_csv(
     rf'D:\BaiduSyncdisk\Data\Multi-Modality-SNPCorrelateImage\label\SuLabCohort'

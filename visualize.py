@@ -46,7 +46,7 @@ def main(model_name: str, wts_path: str,
     use_cuda = True if torch.cuda.is_available() else False
     setup_seed(2023)
     # 初始化网络
-    net = init_net(device, model_name, snp_numbers, pretrain_wts_path=wts_path)
+    net = init_net(device, model_name, snp_numbers, pretrain_checkpoint_path=wts_path)
     if image_file_path:
         image = Image.open(image_file_path)
         img_tensor = gene_image_transforms['test'](image)

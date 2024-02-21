@@ -15,15 +15,15 @@ __auth__ = 'diklios'
 
 import torch
 import tqdm
-from torch.utils.tensorboard import SummaryWriter
+from torch.cuda.amp import autocast
 
 from .compute.metrics import count_metrics_binary_classification
 from .multi_gpus import barrier, reduce_value
 from .records import test_metrics_record
-from .task import binary_classification_task
+from .task import binary_classification_task, multi_classification_task
 
 
-def train_valid_workflow(device, net, criterion, optimizer, scheduler, data_loader_iter, data_loaders, phase,
+def train_valid_workflow(device, net, criterion, optimizer,  data_loader_iter, data_loaders, phase, scaler=None,
                          multi_gpu: bool = False):
     if phase == 'train':
         # 训练
@@ -45,19 +45,30 @@ def train_valid_workflow(device, net, criterion, optimizer, scheduler, data_load
         optimizer.zero_grad()
         # 前向传播
         with torch.set_grad_enabled(phase == 'train'):
-            outputs = net(*inputs)
-        loss, y_pred_batch, y_score_batch = binary_classification_task(outputs, labels, criterion=criterion)
-        y_pred += y_pred_batch
-        y_score += y_score_batch
-        # 只有训练的时候才会更新梯度
-        if phase == 'train':
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
+            with autocast():
+                outputs = net(*inputs)
+                loss, y_pred_batch, y_score_batch = binary_classification_task(outputs, labels, criterion=criterion)
+                # loss, y_pred_batch, y_score_batch = multi_classification_task(outputs, labels, criterion=criterion)
+            # 只有训练的时候才会更新梯度
+            if phase == 'train':
+                if not scaler:
+                    loss.backward()
+                    optimizer.step()
+                else:
+                    # Scales loss，为了梯度放大
+                    scaler.scale(loss).backward()
+                    # scaler.step() 首先把梯度的值unscale回来.
+                    # 如果梯度的值不是 infs 或者 NaNs, 那么调用optimizer.step()来更新权重,
+                    # 否则，忽略step调用，从而保证权重不更新（不被破坏）
+                    scaler.step(optimizer)
+                    # 准备着，看是否要增大scaler
+                    scaler.update()
         # 计算损失
         if multi_gpu:
             barrier()
             loss = reduce_value(loss)
+        y_pred += y_pred_batch
+        y_score += y_score_batch
         running_loss += loss.item()
     # 计算损失
     epoch_loss = running_loss / len(data_loaders[phase].dataset)
@@ -66,7 +77,7 @@ def train_valid_workflow(device, net, criterion, optimizer, scheduler, data_load
     return epoch_loss, all_metrics
 
 
-def test_workflow(device, net, data_loaders, writer: SummaryWriter):
+def test_workflow(device, net, data_loaders, writer):
     net.eval()
     # 注意不能使用连续赋值
     y_true, y_pred, y_score = [], [], []
@@ -79,6 +90,7 @@ def test_workflow(device, net, data_loaders, writer: SummaryWriter):
         with torch.no_grad():
             outputs = net(*inputs)
             y_pred_batch, y_score_batch = binary_classification_task(outputs, labels)
+            # y_pred_batch, y_score_batch = multi_classification_task(outputs, labels)
             # 不更新梯度
             y_pred += y_pred_batch
             y_score += y_score_batch

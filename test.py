@@ -16,7 +16,7 @@ __auth__ = 'diklios'
 import click
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
+from utils import setup_seed
 from divide_dataset import mk_dataset_paths
 from init import init_net
 from utils.mk_data_loaders import mk_data_loaders_single_funcs
@@ -26,21 +26,23 @@ from utils.workflow import workflows
 @click.command()
 @click.argument('model_name', type=str)
 @click.argument('dataset_dir_path', type=click.Path(exists=True))
-@click.argument('wts_path', type=click.Path(exists=True))
-@click.argument('snp_numbers', type=int)
+@click.argument('checkpoint_path', type=click.Path(exists=True))
+@click.argument('snp_number', type=int)
 @click.argument('log_dir', type=click.Path(exists=True))
 @click.option('--batch_size', default=8, help='batch size')
-def main(model_name: str, dataset_dir_path, wts_path, snp_numbers: int, log_dir, batch_size):
+def main(model_name: str, dataset_dir_path, checkpoint_path, snp_number: int, log_dir, batch_size):
+    setup_seed(2023)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    net = init_net(device, model_name, snp_numbers, pretrain_wts_path=wts_path)
+    net = init_net(device, model_name, snp_number, pretrain_checkpoint_path=checkpoint_path)
     data_paths = mk_dataset_paths(dataset_dir_path)
-    data_loaders = mk_data_loaders_single_funcs[model_name](data_paths, batch_size)
+    data_loaders = mk_data_loaders_single_funcs[model_name](data_paths, batch_size=batch_size)
     writer = SummaryWriter(log_dir=log_dir)
+    net.eval()
     # 开始测试
-    if len(data_loaders['test'].dataset) == 0:
-        workflows[model_name]['test'](device, net, data_loaders['valid'], writer)
+    if data_loaders.get('test', None):
+        workflows['test'](device, net, data_loaders['test'], writer)
     else:
-        workflows[model_name]['test'](device, net, data_loaders['test'], writer)
+        workflows['test'](device, net, data_loaders['valid'], writer)
 
 
 if __name__ == '__main__':

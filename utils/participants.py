@@ -27,7 +27,13 @@ def intersection_participant_ids(
     gene_ids = [get_gene_file_participant_id(file_name) for file_name in gene_file_names] if gene_file_names else []
     image_ids = [get_image_file_participant_id(file_name) for file_name in image_file_names] if image_file_names else []
     label_ids = [get_label_participant_id(label_item) for label_item in label_ids]
+    # print(f'label len: {len(label_ids)}')
     ids = set(label_ids)
+    # print(f'label ids set: {len(label_ids)}')
+    # print(f'gene len: {len(set(gene_ids))}')
+    # print(f'gene ids set: {len(set(gene_ids)& ids)}')
+    # print(f'image len: {len(set(image_ids))}')
+    # print(f'image ids set: {len(set(image_ids)& ids)}')
     if gene_ids:
         ids = set(gene_ids) & ids
     if image_ids:
