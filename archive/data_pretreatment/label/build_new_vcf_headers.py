@@ -15,7 +15,7 @@ __auth__ = 'diklios'
 
 import pandas as pd
 
-from base import all_participants_file_path, vcf_rename_rules_file_name
+from archive.data_pretreatment.label.base import all_participants_file_path, vcf_rename_rules_file_name
 
 
 def build_replace_dict():

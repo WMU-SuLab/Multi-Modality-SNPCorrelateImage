@@ -6,13 +6,11 @@
 
 - UKB 数据
 - SuLab 大学生队列数据
-  - 图像数据
-    - mean: mean_b:40.587787595185105,mean_g:56.897545523381226,mean_r:80.04950144849344，即0.1585,0.2222,0.3127
-    - std: sd_b:9.247330111977062,sd_g:10.289160282303381,sd_r:11.616102441651151，即0.0361,0.0402,0.0454
+    - 图像数据
+        - mean: mean_b:40.587787595185105,mean_g:56.897545523381226,mean_r:80.04950144849344，即0.1585,0.2222,0.3127
+        - std: sd_b:9.247330111977062,sd_g:10.289160282303381,sd_r:11.616102441651151，即0.0361,0.0402,0.0454
 
-
-
-## 数据存放位置
+## 原始数据存放位置
 
 - 眼视光服务器
     - 大学生青少年高度近视队列
@@ -35,7 +33,8 @@
             - 原始二进制数据：/share2/pub/biobank/Genotype/Imputation
             - Summary
             - VCF
-                - AMD：/share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/AMD_QCed/AMD_Control.001.reheader.vcf
+                -
+                AMD：/share2/pub/yaoyh/yaoyh/1Project/4UKBB/image_genetic_genotype/AMD_QCed/AMD_Control.001.reheader.vcf
                 - GLC：/share/pub/xuezb/biobank/GWAS/GLC/data_70359/fastGWA/GLC.fastGWA
         - Disease Label
             - 正博师兄
@@ -53,3 +52,9 @@
                 - 连续性状：/share/pub/yuanj/project/OphthWES/ExWAS/S8114_final_fastgwa_SE1.fastGWA
             - Raw VCF:/share/pub/likai/myopia/vcf/S8505
             - filtered alleles vcf:/share/pub/daiw/Multi-Modality-SNPCorrelateImage/data/gene/filtered_alleles_vcf
+
+
+## 可用数据存放位置
+
+- 基本处理完成的原始数据：SuLabDL3 `E:\sunhj\Multi-Modality-SNPCorrelateImage`
+- 训练数据和代码：SuLabDL3 `F:\sunhj\Multi-Modality-SNPCorrelateImage`

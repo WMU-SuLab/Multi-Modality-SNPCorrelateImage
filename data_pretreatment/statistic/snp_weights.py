@@ -38,7 +38,7 @@ def main(wts_path, method, threshold_right, threshold_left, select_by, ascending
         df = df.iloc[round(len(df) * threshold_left):round(len(df) * threshold_right)]
     else:
         raise ValueError('method must be num or percent')
-    x = df['gene_id'].tolist()
+    x = ['chr'+item for item in df['gene_id'].tolist()]
     x += ['.', '..', '...']
     y = df[select_by].tolist()
     print(y)
